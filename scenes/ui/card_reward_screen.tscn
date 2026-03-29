@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://creward01"]
+
+[ext_resource type="Script" path="res://scripts/ui/card_reward_screen.gd" id="1_reward"]
+
+[node name="CardRewardScreen" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_reward")

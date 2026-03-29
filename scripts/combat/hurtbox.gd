@@ -35,19 +35,16 @@ func _start_iframes() -> void:
 			_iframes_flash_active = false
 			return
 
-		# Rapid alpha flicker during i-frame window.
-		var elapsed: float = 0.0
-		var flicker_interval: float = 0.06
-		while elapsed < iframes_duration:
-			if not is_instance_valid(owner_node) or not is_inside_tree():
-				break
-			owner_node.modulate.a = 0.3 if int(elapsed / flicker_interval) % 2 == 0 else 1.0
-			await tree.create_timer(flicker_interval, true, false, true).timeout
-			elapsed += flicker_interval
-
-		# Restore
+		# Use one tween instead of a timer loop to reduce per-hit coroutine churn.
+		var tween := owner_node.create_tween()
+		tween.set_loops(maxi(int(ceil(iframes_duration / 0.06)), 1))
+		tween.tween_property(owner_node, "modulate:a", 0.3, 0.03)
+		tween.tween_property(owner_node, "modulate:a", 1.0, 0.03)
+		await tree.create_timer(iframes_duration, true, false, true).timeout
 		if is_instance_valid(owner_node):
 			owner_node.modulate.a = 1.0
+			if tween.is_valid():
+				tween.kill()
 
 	is_invincible = false
 	_iframes_flash_active = false

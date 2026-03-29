@@ -164,8 +164,10 @@ func apply_class_config(config: ClassConfig) -> void:
 		if current_attack.has_method("get_attack_duration"):
 			attack_duration = current_attack.get_attack_duration()
 
-	# Initialize card deck
-	if config.card_pool.size() > 0:
+	# Initialize card deck — use run_deck if available (accumulated cards), else starting pool.
+	if GameManager.run_deck.size() > 0:
+		card_manager.initialize_deck(GameManager.run_deck)
+	elif config.card_pool.size() > 0:
 		card_manager.initialize_deck(config.card_pool)
 
 func get_iso_input() -> Vector2:

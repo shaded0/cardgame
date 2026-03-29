@@ -99,10 +99,10 @@ func _create_room_node(room: RoomData, pos: Vector2) -> void:
 	# Style based on room type
 	var type_icon: String = ""
 	match room.room_type:
-		0: type_icon = "[Combat] "  # COMBAT
-		1: type_icon = "[Elite] "   # ELITE
-		2: type_icon = "[Rest] "    # REST
-		3: type_icon = "[Boss] "    # BOSS
+		RoomData.RoomType.COMBAT: type_icon = "[Combat] "
+		RoomData.RoomType.ELITE: type_icon = "[Elite] "
+		RoomData.RoomType.REST: type_icon = "[Rest] "
+		RoomData.RoomType.BOSS: type_icon = "[Boss] "
 
 	btn.text = type_icon + room.display_name
 	btn.add_theme_font_size_override("font_size", 14)
@@ -151,7 +151,7 @@ func _on_room_clicked(room: RoomData) -> void:
 	if not GameManager.is_room_available(room):
 		return
 
-	if room.room_type == 2:  # REST
+	if room.room_type == RoomData.RoomType.REST:
 		GameManager.enter_room(room)
 		# Refresh map in place — rest doesn't leave the map
 		_refresh_button_states()

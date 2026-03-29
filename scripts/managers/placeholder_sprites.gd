@@ -4,22 +4,40 @@ extends RefCounted
 ## Generates placeholder textures for prototyping.
 ## These helpers build textures from math at runtime so you can iterate quickly before art exists.
 
+static var _rect_cache: Dictionary = {}
+static var _circle_cache: Dictionary = {}
+
 static func create_rect_texture(width: int, height: int, color: Color) -> ImageTexture:
-	# Core utility for quick solid color blocks.
+	# Cache generated textures because combat FX request the same shapes repeatedly.
+	var key := "rect:%d:%d:%s" % [width, height, _color_key(color)]
+	if _rect_cache.has(key):
+		return _rect_cache[key]
+
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
 	image.fill(color)
-	return ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
+	_rect_cache[key] = texture
+	return texture
 
 static func create_circle_texture(radius: int, color: Color) -> ImageTexture:
-	# Draw a circular sprite by setting pixels manually (simple and dependency-free).
+	# Cache circle textures; these are some of the hottest allocations during combat.
+	var key := "circle:%d:%s" % [radius, _color_key(color)]
+	if _circle_cache.has(key):
+		return _circle_cache[key]
+
 	var size := radius * 2
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var center := Vector2(radius, radius)
+	var radius_sq := radius * radius
 	for x in range(size):
 		for y in range(size):
-			if Vector2(x, y).distance_to(center) <= radius:
+			var dx := x - int(center.x)
+			var dy := y - int(center.y)
+			if dx * dx + dy * dy <= radius_sq:
 				image.set_pixel(x, y, color)
-	return ImageTexture.create_from_image(image)
+	var texture := ImageTexture.create_from_image(image)
+	_circle_cache[key] = texture
+	return texture
 
 static func create_humanoid_texture(size: int, body_color: Color, detail_color: Color, weapon_type: String = "sword") -> ImageTexture:
 	## Creates a top-down humanoid sprite facing upward.
@@ -174,3 +192,6 @@ static func create_diamond_texture(width: int, height: int, color: Color) -> Ima
 			if dx + dy <= 1.0:
 				image.set_pixel(x, y, color)
 	return ImageTexture.create_from_image(image)
+
+static func _color_key(color: Color) -> String:
+	return "%.4f:%.4f:%.4f:%.4f" % [color.r, color.g, color.b, color.a]

@@ -22,6 +22,7 @@ var player: CharacterBody2D = null
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
+@onready var debuff_system: DebuffSystem = $DebuffSystem
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -95,6 +96,8 @@ func _do_attack() -> void:
 	can_attack = false
 	hitbox_shape.disabled = false
 	hitbox.reset_targets()
+	# Apply Weak debuff multiplier to outgoing damage.
+	hitbox.damage = attack_damage * debuff_system.get_attack_multiplier()
 	hitbox.position = (player.global_position - global_position).normalized() * 36.0
 	_play_anim(&"attack")
 
@@ -121,12 +124,14 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 	if current_state == State.DEAD:
 		return
 
-	health_component.take_damage(incoming_hitbox.damage)
+	# Apply Vulnerable debuff multiplier to incoming damage.
+	var final_damage: float = incoming_hitbox.damage * debuff_system.get_damage_multiplier()
+	health_component.take_damage(final_damage)
 	if current_state == State.DEAD:
 		return
 
 	# Floating damage number + white flash + sparks
-	DamageNumber.spawn(get_parent(), global_position, incoming_hitbox.damage, Color(1.0, 1.0, 1.0))
+	DamageNumber.spawn(get_parent(), global_position, final_damage, Color(1.0, 1.0, 1.0))
 	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 4, Color(1.0, 0.8, 0.3))
 	ScreenFX.shake(self, 4.0, 0.08)
 

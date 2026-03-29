@@ -9,9 +9,9 @@ func _ready() -> void:
 func _place_obstacles() -> void:
 	# Two rows of pillars forming a corridor
 	for i in range(-2, 3):
-		_add_obstacle(0, Vector2(-100, i * 100.0))  # Left pillar row
-		_add_obstacle(0, Vector2(100, i * 100.0))   # Right pillar row
+		_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(-100, i * 100.0))
+		_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(100, i * 100.0))
 
 	# Horizontal walls at ends
-	_add_obstacle(1, Vector2(0, -280))   # WALL_H top
-	_add_obstacle(1, Vector2(0, 280))    # WALL_H bottom
+	_add_obstacle(Obstacle.ObstacleType.WALL_H, Vector2(0, -280))
+	_add_obstacle(Obstacle.ObstacleType.WALL_H, Vector2(0, 280))

@@ -16,6 +16,7 @@ var current_room: RoomData = null
 var run_active: bool = false
 var completed_rooms: Array[String] = []
 var player_health_carry: float = -1.0  ## -1 means use max_health
+var run_deck: Array[CardData] = []     ## Cards accumulated during the run
 
 # All rooms loaded at run start
 var all_rooms: Array[RoomData] = []
@@ -48,7 +49,11 @@ func start_new_run() -> void:
 	run_active = true
 	completed_rooms.clear()
 	player_health_carry = -1.0
+	run_deck = current_class_config.card_pool.duplicate() if current_class_config else []
 	_load_all_rooms()
+
+func add_card_to_deck(card: CardData) -> void:
+	run_deck.append(card)
 
 func _load_all_rooms() -> void:
 	all_rooms.clear()
@@ -92,7 +97,7 @@ func get_room_by_id(room_id: String) -> RoomData:
 
 func enter_room(room: RoomData) -> void:
 	current_room = room
-	if room.room_type == 2:  # REST
+	if room.room_type == RoomData.RoomType.REST:
 		player_health_carry = -1.0  # Full heal
 		complete_room(room.room_id)
 	else:

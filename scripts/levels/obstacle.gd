@@ -1,3 +1,4 @@
+class_name Obstacle
 extends StaticBody2D
 
 ## Arena obstacle — blocks movement and projectiles.

@@ -116,7 +116,7 @@ func _on_room_cleared() -> void:
 		GameManager.complete_room(GameManager.current_room.room_id)
 
 	# Show "Room Cleared" text with dramatic entrance
-	var is_boss := GameManager.current_room and GameManager.current_room.room_type == 3  # BOSS
+	var is_boss := GameManager.current_room and GameManager.current_room.room_type == RoomData.RoomType.BOSS
 
 	var label := Label.new()
 	label.text = "VICTORY!" if is_boss else "ROOM CLEARED!"
@@ -158,17 +158,41 @@ func _on_room_cleared() -> void:
 		GameManager.go_to_class_select()
 	else:
 		await get_tree().create_timer(1.5).timeout
+		_show_card_rewards()
+
+func _show_card_rewards() -> void:
+	## Show card reward screen before returning to map.
+	var reward_scene: PackedScene = load("res://scenes/ui/card_reward_screen.tscn")
+	var reward_screen: CanvasLayer = reward_scene.instantiate()
+
+	var is_elite: bool = GameManager.current_room and GameManager.current_room.room_type == RoomData.RoomType.ELITE
+	var class_id: StringName = &"soldier"
+	if GameManager.current_class_config:
+		class_id = GameManager.current_class_config.class_id
+
+	var ui_layer: CanvasLayer = get_node_or_null("UILayer")
+	if ui_layer:
+		ui_layer.add_child(reward_screen)
+	else:
+		add_child(reward_screen)
+
+	reward_screen.setup(class_id, is_elite)
+	reward_screen.card_chosen.connect(func(card: CardData) -> void:
+		GameManager.add_card_to_deck(card)
 		GameManager.go_to_map()
+	)
+	reward_screen.rewards_skipped.connect(func() -> void:
+		GameManager.go_to_map()
+	)
 
 ## Override in subclasses to place obstacles
 func _place_obstacles() -> void:
 	pass
 
-func _add_obstacle(type: int, pos: Vector2) -> void:
-	var obstacle_script: Script = load("res://scripts/levels/obstacle.gd")
-	var obs := obstacle_script.new()
+func _add_obstacle(type: Obstacle.ObstacleType, pos: Vector2) -> void:
+	var obs := Obstacle.new()
 	entity_layer.add_child(obs)
-	obs.call("setup", type, pos)
+	obs.setup(type, pos)
 
 func _configure_from_current_room() -> void:
 	if GameManager.current_room:

@@ -10,6 +10,8 @@ value = 30.0
 radius = 0.0
 duration = 5.0
 target_mode = 2
+buff_type = 0
+stacks = 1
 
 [resource]
 script = ExtResource("1")

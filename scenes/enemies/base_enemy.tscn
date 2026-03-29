@@ -1,9 +1,10 @@
-[gd_scene load_steps=7 format=3 uid="uid://benemy001"]
+[gd_scene load_steps=8 format=3 uid="uid://benemy001"]
 
 [ext_resource type="Script" path="res://scripts/enemies/base_enemy.gd" id="1_enemy"]
 [ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="2_hitbox"]
 [ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="3_hurtbox"]
 [ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="4_health"]
+[ext_resource type="Script" path="res://scripts/combat/debuff_system.gd" id="5_debuff"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(32, 20)
@@ -46,3 +47,6 @@ shape = SubResource("RectangleShape2D_hurtbox")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("4_health")
 max_health = 40.0
+
+[node name="DebuffSystem" type="Node" parent="."]
+script = ExtResource("5_debuff")

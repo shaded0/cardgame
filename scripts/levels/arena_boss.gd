@@ -11,11 +11,11 @@ func _ready() -> void:
 
 func _place_obstacles() -> void:
 	# Corner pillars
-	_add_obstacle(0, Vector2(-200, -100))
-	_add_obstacle(0, Vector2(200, -100))
-	_add_obstacle(0, Vector2(-200, 100))
-	_add_obstacle(0, Vector2(200, 100))
+	_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(-200, -100))
+	_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(200, -100))
+	_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(-200, 100))
+	_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(200, 100))
 
 	# Small cover near center
-	_add_obstacle(3, Vector2(-80, 0))
-	_add_obstacle(3, Vector2(80, 0))
+	_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(-80, 0))
+	_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(80, 0))

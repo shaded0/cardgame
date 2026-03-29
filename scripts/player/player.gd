@@ -19,6 +19,8 @@ var can_dodge: bool = true
 var current_attack: Node = null
 var attack_visual: Sprite2D = null
 var current_anim: StringName = &"idle"
+var _attack_active: bool = false
+var _attack_elapsed: float = 0.0
 
 ## Core player node with components:
 ## - hitbox/hurtbox (combat)
@@ -35,6 +37,7 @@ var current_anim: StringName = &"idle"
 @onready var mana_component: ManaComponent = $ManaComponent
 @onready var card_manager: CardManager = $CardManager
 @onready var buff_system: BuffSystem = $BuffSystem
+@onready var state_machine: PlayerStateMachine = $StateMachine
 
 func _ready() -> void:
 	# Start with disabled melee hitbox; each attack enables it on demand.
@@ -132,6 +135,9 @@ func _process(_delta: float) -> void:
 		facing_direction = to_mouse.normalized()
 		anim_sprite.rotation = facing_direction.angle() + PI / 2.0
 
+func _physics_process(delta: float) -> void:
+	_update_attack_watchdog(delta)
+
 func play_anim(anim_name: StringName) -> void:
 	if current_anim != anim_name:
 		current_anim = anim_name
@@ -154,10 +160,9 @@ func apply_class_config(config: ClassConfig) -> void:
 	health_component.max_health = config.max_health
 	health_component.reset_to_full()
 	mana_component.max_mana = config.max_mana
-	mana_component.current_mana = 0.0
-	mana_component.mana_changed.emit(mana_component.current_mana, mana_component.max_mana)
 	mana_component.mana_per_hit_dealt = config.mana_per_hit_dealt
 	mana_component.mana_per_hit_taken = config.mana_per_hit_taken
+	mana_component.initialize()
 	hitbox.damage = config.attack_damage
 
 	# Setup attack visual color based on class
@@ -169,18 +174,10 @@ func apply_class_config(config: ClassConfig) -> void:
 	attack_visual.texture = PlaceholderSprites.create_circle_texture(30, atk_color)
 
 	# Load basic attack script
-	if current_attack and is_instance_valid(current_attack):
-		current_attack.queue_free()
-		current_attack = null
-
-	if config.attack_script:
-		var attack_node := Node.new()
-		attack_node.set_script(config.attack_script)
-		attack_node.name = "BasicAttack"
-		add_child(attack_node)
-		current_attack = attack_node
-		if current_attack.has_method("get_attack_duration"):
-			attack_duration = current_attack.get_attack_duration()
+	_attack_active = false
+	_attack_elapsed = 0.0
+	_disable_attack_hitbox()
+	_rebuild_attack_controller(config.attack_script)
 
 	# Initialize card deck — use run_deck if available (accumulated cards), else starting pool.
 	if GameManager.run_deck.size() > 0:
@@ -214,13 +211,17 @@ func get_effective_damage() -> float:
 		return buff_system.get_modified_damage(attack_damage)
 	return attack_damage
 
-func start_attack() -> void:
+func start_attack() -> bool:
 	var aim: Vector2 = get_aim_direction()
 	play_anim(&"attack")
+	_attack_active = true
+	_attack_elapsed = 0.0
 
 	# Guard against freed hitbox during scene transitions.
 	if not is_instance_valid(hitbox):
-		return
+		_attack_active = false
+		_disable_attack_hitbox()
+		return false
 
 	# Reset hitbox target tracking so each swing can hit enemies again.
 	hitbox.reset_targets()
@@ -232,25 +233,30 @@ func start_attack() -> void:
 	# Apply buff-modified damage to hitbox for this swing.
 	hitbox.damage = get_effective_damage()
 
-	if current_attack and current_attack.has_method("execute"):
-		current_attack.execute(self, aim)
+	var attack_controller: Node = _ensure_attack_controller()
+	if attack_controller and attack_controller.has_method("execute"):
+		attack_controller.execute(self, aim)
+	elif attack_controller == null and GameManager.current_class_config and GameManager.current_class_config.attack_script:
+		_attack_active = false
+		_disable_attack_hitbox()
+		return false
 	else:
 		hitbox_shape.disabled = false
 		hitbox.position = aim * 60.0
+	return true
 
 func end_attack() -> void:
+	_attack_active = false
+	_attack_elapsed = 0.0
 	if attack_visual:
 		attack_visual.visible = false
 	play_anim(&"idle")
 
-	if not is_instance_valid(hitbox):
-		return
-
-	if current_attack and current_attack.has_method("end_attack"):
-		current_attack.end_attack(self)
+	var attack_controller: Node = _ensure_attack_controller(false)
+	if attack_controller and attack_controller.has_method("end_attack"):
+		attack_controller.end_attack(self)
 	else:
-		hitbox_shape.disabled = true
-		hitbox.position = Vector2.ZERO
+		_disable_attack_hitbox()
 
 func set_invincible(value: bool) -> void:
 	hurtbox.is_invincible = value
@@ -269,3 +275,59 @@ func _flash_hurt() -> void:
 		if is_instance_valid(self):
 			modulate = Color(1, 1, 1, 1)
 	)
+
+func force_end_attack() -> void:
+	## Hard stop used by watchdog/self-healing paths when attack state desyncs.
+	_attack_active = false
+	_attack_elapsed = 0.0
+	if attack_visual:
+		attack_visual.visible = false
+	_disable_attack_hitbox()
+	if state_machine and state_machine.is_in_state("attack"):
+		state_machine.recover_to_neutral()
+
+func _update_attack_watchdog(delta: float) -> void:
+	if not _attack_active:
+		return
+
+	_attack_elapsed += delta
+	var attack_timeout: float = maxf(attack_duration + 0.2, 0.3)
+	if _attack_elapsed < attack_timeout:
+		return
+
+	# If we stayed "attacking" longer than expected, clear combat state so input can recover.
+	force_end_attack()
+
+func _ensure_attack_controller(rebuild_if_missing: bool = true) -> Node:
+	if is_instance_valid(current_attack):
+		return current_attack
+
+	current_attack = null
+	if not rebuild_if_missing:
+		return null
+	if GameManager.current_class_config == null:
+		return null
+	return _rebuild_attack_controller(GameManager.current_class_config.attack_script)
+
+func _rebuild_attack_controller(attack_script: Script) -> Node:
+	if current_attack and is_instance_valid(current_attack):
+		current_attack.queue_free()
+	current_attack = null
+
+	if attack_script == null:
+		return null
+
+	var attack_node := Node.new()
+	attack_node.set_script(attack_script)
+	attack_node.name = "BasicAttack"
+	add_child(attack_node)
+	current_attack = attack_node
+	if current_attack.has_method("get_attack_duration"):
+		attack_duration = current_attack.get_attack_duration()
+	return current_attack
+
+func _disable_attack_hitbox() -> void:
+	if is_instance_valid(hitbox_shape):
+		hitbox_shape.set_deferred("disabled", true)
+	if is_instance_valid(hitbox):
+		hitbox.position = Vector2.ZERO

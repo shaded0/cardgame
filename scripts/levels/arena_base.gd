@@ -130,8 +130,12 @@ func _clamp_entity_to_arena(entity: Node2D) -> void:
 		entity.global_position = pos * scale_factor
 
 func _spawn_enemies() -> void:
+	# Stagger enemy engagement so the player isn't overwhelmed frame-1.
+	# Each enemy waits progressively longer before chasing, giving card windows.
 	for i in range(enemies_to_spawn):
-		_spawn_enemy_in_radius(200.0, 450.0)
+		var enemy: Node = _spawn_enemy_in_radius(200.0, 450.0)
+		if enemy and enemy.has_method("set_aggro_delay"):
+			enemy.set_aggro_delay(i * 0.8)
 	enemies_spawned = true
 
 func _on_room_cleared() -> void:

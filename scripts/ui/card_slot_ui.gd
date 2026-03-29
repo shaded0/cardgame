@@ -1,8 +1,7 @@
 extends PanelContainer
 
 ## UI node for one card slot.
-## Stores the current card resource and updates text/color based on playability.
-## Enhanced with fiery glow border when cards are playable.
+## Shows rarity-colored borders, X-cost display, exhaust badge.
 
 @onready var card_name_label: Label = $VBoxContainer/CardName
 @onready var mana_cost_label: Label = $VBoxContainer/ManaCost
@@ -13,11 +12,11 @@ var slot_index: int = 0
 var _is_playable: bool = false
 var _glow_time: float = 0.0
 var _panel_style: StyleBoxFlat = null
+var _exhaust_label: Label = null
+var _rarity_indicator: Label = null
 
 func _ready() -> void:
-	# Display slot hotkey from 1..4 in-editor using zero-based index.
 	key_hint_label.text = str(slot_index + 1)
-	# Stagger glow animation per slot so they don't all pulse in sync.
 	_glow_time = slot_index * 0.7
 
 func _process(delta: float) -> void:
@@ -26,35 +25,37 @@ func _process(delta: float) -> void:
 
 	_glow_time += delta
 
-	# Animate border color with fiery pulse
+	# Animate border color with fiery pulse, tinted by rarity.
 	var pulse := sin(_glow_time * 3.0) * 0.5 + 0.5
+	var base_color: Color = _get_rarity_glow_color()
 	var glow_color := Color(
-		0.8 + pulse * 0.2,
-		0.35 + pulse * 0.25,
-		0.1 + pulse * 0.1,
+		base_color.r + pulse * 0.2,
+		base_color.g + pulse * 0.15,
+		base_color.b + pulse * 0.1,
 		0.7 + pulse * 0.3
 	)
 	_panel_style.border_color = glow_color
 
-	# Subtle border width pulse
 	var bw := int(2.0 + pulse * 1.5)
 	_panel_style.border_width_left = bw
 	_panel_style.border_width_top = bw
 	_panel_style.border_width_right = bw
 	_panel_style.border_width_bottom = bw
 
-	# Animate mana cost label color
 	var mana_pulse := sin(_glow_time * 2.5 + 0.5) * 0.5 + 0.5
 	mana_cost_label.add_theme_color_override("font_color", Color(0.3 + mana_pulse * 0.3, 0.5, 1.0, 1.0))
 
 func set_card_data(card: CardData) -> void:
-	# Bind resource values to visible UI labels.
 	current_card = card
 	card_name_label.text = card.card_name
 	mana_cost_label.text = card.get_cost_label()
 	visible = true
 
-	# Pop-in animation when a new card arrives
+	# Exhaust badge
+	_update_exhaust_badge()
+	_update_rarity_indicator()
+
+	# Pop-in animation
 	scale = Vector2(0.8, 0.8)
 	modulate.a = 0.5
 	var tween := create_tween().set_parallel(true)
@@ -62,13 +63,14 @@ func set_card_data(card: CardData) -> void:
 	tween.tween_property(self, "modulate:a", 1.0, 0.15)
 
 func clear_card() -> void:
-	# Empty slot after card is consumed/replaced.
 	current_card = null
 	card_name_label.text = ""
 	mana_cost_label.text = ""
 	modulate = Color(1, 1, 1, 1)
 	_is_playable = false
 	_apply_default_style()
+	_update_exhaust_badge()
+	_update_rarity_indicator()
 
 func set_playable(can_play: bool) -> void:
 	_is_playable = can_play
@@ -79,18 +81,40 @@ func set_playable(can_play: bool) -> void:
 		modulate = Color(0.4, 0.4, 0.4, 0.7)
 		_apply_default_style()
 
+func _get_rarity_border_color() -> Color:
+	if current_card == null:
+		return Color(0.25, 0.28, 0.35, 0.5)
+	match current_card.rarity:
+		CardData.Rarity.UNCOMMON:
+			return Color(0.3, 0.5, 1.0, 0.7)
+		CardData.Rarity.RARE:
+			return Color(1.0, 0.8, 0.2, 0.8)
+		_:
+			return Color(0.25, 0.28, 0.35, 0.5)
+
+func _get_rarity_glow_color() -> Color:
+	if current_card == null:
+		return Color(0.8, 0.35, 0.1)
+	match current_card.rarity:
+		CardData.Rarity.UNCOMMON:
+			return Color(0.3, 0.5, 1.0)
+		CardData.Rarity.RARE:
+			return Color(1.0, 0.75, 0.15)
+		_:
+			return Color(0.8, 0.35, 0.1)
+
 func _apply_playable_style() -> void:
 	_panel_style = StyleBoxFlat.new()
 	_panel_style.bg_color = Color(0.12, 0.1, 0.16, 0.95)
-	_panel_style.border_color = Color(1.0, 0.5, 0.2, 0.8)
+	_panel_style.border_color = _get_rarity_glow_color()
 	_panel_style.set_border_width_all(2)
 	_panel_style.set_corner_radius_all(6)
 	_panel_style.content_margin_left = 8.0
 	_panel_style.content_margin_top = 6.0
 	_panel_style.content_margin_right = 8.0
 	_panel_style.content_margin_bottom = 6.0
-	# Shadow glow beneath the card
-	_panel_style.shadow_color = Color(1.0, 0.4, 0.1, 0.3)
+	var glow: Color = _get_rarity_glow_color()
+	_panel_style.shadow_color = Color(glow.r, glow.g, glow.b, 0.3)
 	_panel_style.shadow_size = 6
 	add_theme_stylebox_override("panel", _panel_style)
 
@@ -99,7 +123,7 @@ func _apply_playable_style() -> void:
 func _apply_default_style() -> void:
 	_panel_style = StyleBoxFlat.new()
 	_panel_style.bg_color = Color(0.1, 0.12, 0.18, 0.9)
-	_panel_style.border_color = Color(0.25, 0.28, 0.35, 0.5)
+	_panel_style.border_color = _get_rarity_border_color()
 	_panel_style.set_border_width_all(2)
 	_panel_style.set_corner_radius_all(6)
 	_panel_style.content_margin_left = 8.0
@@ -111,3 +135,44 @@ func _apply_default_style() -> void:
 	add_theme_stylebox_override("panel", _panel_style)
 
 	card_name_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75, 1.0))
+
+func _update_exhaust_badge() -> void:
+	if _exhaust_label:
+		_exhaust_label.queue_free()
+		_exhaust_label = null
+
+	if current_card and current_card.exhaust:
+		_exhaust_label = Label.new()
+		_exhaust_label.text = "!"
+		_exhaust_label.add_theme_font_size_override("font_size", 14)
+		_exhaust_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+		_exhaust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		_exhaust_label.position = Vector2(size.x - 18, 2)
+		add_child(_exhaust_label)
+
+func _update_rarity_indicator() -> void:
+	if _rarity_indicator:
+		_rarity_indicator.queue_free()
+		_rarity_indicator = null
+
+	if current_card == null:
+		return
+
+	if current_card.rarity == CardData.Rarity.COMMON:
+		return
+
+	_rarity_indicator = Label.new()
+	_rarity_indicator.add_theme_font_size_override("font_size", 9)
+	_rarity_indicator.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_rarity_indicator.position = Vector2(0, -12)
+	_rarity_indicator.size = Vector2(size.x, 12)
+
+	match current_card.rarity:
+		CardData.Rarity.UNCOMMON:
+			_rarity_indicator.text = "Uncommon"
+			_rarity_indicator.add_theme_color_override("font_color", Color(0.3, 0.5, 1.0, 0.8))
+		CardData.Rarity.RARE:
+			_rarity_indicator.text = "Rare"
+			_rarity_indicator.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 0.8))
+
+	add_child(_rarity_indicator)

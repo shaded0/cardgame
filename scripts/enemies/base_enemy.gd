@@ -19,6 +19,8 @@ var can_attack: bool = true
 var player: CharacterBody2D = null
 var use_ranged_attack: bool = false
 var _attack_sequence_id: int = 0
+var _aggro_delay: float = 0.0  ## Seconds before this enemy starts chasing
+var _is_frozen: bool = false   ## Set by FREEZE debuff — stops all movement/attacks
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
 @onready var hitbox: Hitbox = $Hitbox
@@ -30,7 +32,7 @@ var _attack_sequence_id: int = 0
 func _ready() -> void:
 	add_to_group("enemies")
 
-	hitbox_shape.disabled = true
+	_disable_attack_hitbox()
 
 	_setup_sprite()
 
@@ -97,11 +99,32 @@ func _setup_sprite() -> void:
 
 	anim_sprite.play(&"idle")
 
+func set_aggro_delay(delay: float) -> void:
+	## Stagger when this enemy starts chasing so the player isn't swarmed instantly.
+	_aggro_delay = delay
+
+func set_frozen(frozen: bool) -> void:
+	_is_frozen = frozen
+	if frozen:
+		velocity = Vector2.ZERO
+
 func _physics_process(delta: float) -> void:
 	if current_state == State.DEAD:
 		return
 
 	if player == null or not is_instance_valid(player):
+		return
+
+	# Frozen enemies can't act at all — cards that freeze create safe windows.
+	if _is_frozen:
+		velocity = Vector2.ZERO
+		_play_anim(&"idle")
+		return
+
+	# Staggered aggro: wait before engaging so the player has breathing room.
+	if _aggro_delay > 0.0:
+		_aggro_delay -= delta
+		_play_anim(&"idle")
 		return
 
 	# Let behavior scripts override the frame (e.g. flee, teleport)
@@ -173,7 +196,12 @@ func _do_attack() -> void:
 		_finish_attack_after(0.3, attack_id)
 		return
 
-	hitbox_shape.disabled = false
+	if not _ensure_attack_hitbox_ready():
+		can_attack = true
+		current_state = State.CHASE
+		return
+
+	hitbox_shape.set_deferred("disabled", false)
 	hitbox.reset_targets()
 	hitbox.damage = attack_damage * _get_attack_multiplier()
 	hitbox.position = (player.global_position - global_position).normalized() * 36.0
@@ -296,10 +324,27 @@ func spawn_minion(minion_data: EnemyData, offset: Vector2) -> void:
 	parent.add_child(minion)
 
 func _disable_attack_hitbox() -> void:
+	_refresh_combat_refs()
 	if is_instance_valid(hitbox_shape):
 		hitbox_shape.set_deferred("disabled", true)
 	if is_instance_valid(hitbox):
 		hitbox.position = Vector2.ZERO
+
+func _ensure_attack_hitbox_ready() -> bool:
+	_refresh_combat_refs()
+	return is_instance_valid(hitbox_shape) and is_instance_valid(hitbox)
+
+func _refresh_combat_refs() -> void:
+	if not is_instance_valid(hitbox):
+		hitbox = get_node_or_null("Hitbox") as Hitbox
+	if not is_instance_valid(hurtbox):
+		hurtbox = get_node_or_null("Hurtbox") as Hurtbox
+	if not is_instance_valid(health_component):
+		health_component = get_node_or_null("HealthComponent") as HealthComponent
+	if not is_instance_valid(hitbox_shape):
+		hitbox_shape = get_node_or_null("Hitbox/CollisionShape2D") as CollisionShape2D
+	if debuff_system == null or not is_instance_valid(debuff_system):
+		debuff_system = get_node_or_null("DebuffSystem")
 
 func _get_attack_multiplier() -> float:
 	if debuff_system and debuff_system.has_method("get_attack_multiplier"):

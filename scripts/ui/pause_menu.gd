@@ -64,10 +64,27 @@ func _populate_card_details() -> void:
 		var can_afford: bool = card_mgr.can_play_card(card, mana_comp.current_mana)
 		var cost_str: String = card.get_cost_label()
 
-		label.text = "[%d] %s (%s mana)\n    %s" % [i + 1, card.card_name, cost_str, card.description]
+		# Build detail line with rarity and exhaust info.
+		var tags: String = ""
+		match card.rarity:
+			CardData.Rarity.UNCOMMON:
+				tags += "[Uncommon] "
+			CardData.Rarity.RARE:
+				tags += "[Rare] "
+		if card.exhaust:
+			tags += "[Exhaust] "
+
+		label.text = "[%d] %s%s (%s mana)\n    %s" % [i + 1, tags, card.card_name, cost_str, card.description]
 
 		if can_afford:
-			label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+			# Color by rarity
+			match card.rarity:
+				CardData.Rarity.RARE:
+					label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5, 1.0))
+				CardData.Rarity.UNCOMMON:
+					label.add_theme_color_override("font_color", Color(0.7, 0.85, 1.0, 1.0))
+				_:
+					label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
 		else:
 			label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 0.6))
 

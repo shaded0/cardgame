@@ -8,7 +8,8 @@ func enter() -> void:
 	# Attack duration is configurable in class data.
 	attack_timer = player.attack_duration
 	player.velocity = Vector2.ZERO
-	player.start_attack()
+	if not player.start_attack():
+		state_machine.call_deferred("recover_to_neutral")
 
 func physics_update(delta: float) -> void:
 	# Return to idle once hitbox window ends.

@@ -52,6 +52,22 @@ func transition_to(state_name: String) -> void:
 	current_state = states[state_name]
 	current_state.enter()
 
+func is_in_state(state_name: String) -> bool:
+	return current_state == states.get(state_name)
+
+func recover_to_neutral() -> void:
+	var player_node: PlayerController = get_parent() as PlayerController
+	if player_node == null:
+		return
+	if consume_attack_buffer():
+		transition_to("attack")
+	elif player_node.can_dodge and consume_dodge_buffer():
+		transition_to("dodge")
+	elif player_node.get_iso_input() != Vector2.ZERO:
+		transition_to("move")
+	else:
+		transition_to("idle")
+
 func buffer_attack_input() -> void:
 	_attack_buffer_remaining = INPUT_BUFFER_DURATION
 

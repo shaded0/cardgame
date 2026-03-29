@@ -9,12 +9,24 @@ signal mana_changed(current: float, maximum: float)
 @export var max_mana: float = 100.0
 @export var mana_per_hit_dealt: float = 10.0
 @export var mana_per_hit_taken: float = 15.0
+@export var starting_mana_percent: float = 0.4  ## Start fights with 40% mana so cards matter immediately
+@export var passive_regen_rate: float = 3.0     ## Mana per second — keeps cards relevant mid-fight
 
 var current_mana: float = 0.0
 
 func _ready() -> void:
 	# Keep mana calculations responsive even during pause menus.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
+func _process(delta: float) -> void:
+	# Passive mana regen so players aren't starved between melee exchanges.
+	if passive_regen_rate > 0.0 and current_mana < max_mana:
+		add_mana(passive_regen_rate * delta)
+
+func initialize() -> void:
+	## Call at fight start to front-load mana.
+	current_mana = max_mana * starting_mana_percent
+	mana_changed.emit(current_mana, max_mana)
 
 func add_mana(amount: float) -> void:
 	# Clamp mana to max and emit once so UI updates reliably.

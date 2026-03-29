@@ -48,13 +48,13 @@ func _connect_to_player() -> void:
 	if card_mgr.hand.size() > 0:
 		_on_hand_updated(card_mgr.hand)
 
-func _find_player() -> CharacterBody2D:
-	var player: CharacterBody2D = GameManager.get_player()
+func _find_player() -> PlayerController:
+	var player: PlayerController = GameManager.get_player()
 	if player:
 		return player
 	# Fallback: find by name
 	var arena: Node = get_parent().get_parent()
-	return arena.find_child("Player", true, false) as CharacterBody2D
+	return arena.find_child("Player", true, false) as PlayerController
 
 func _on_health_changed(current: float, maximum: float) -> void:
 	health_bar.max_value = maximum

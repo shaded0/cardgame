@@ -68,10 +68,6 @@ func _build_ui() -> void:
 	skip_btn.add_theme_font_size_override("font_size", 18)
 	skip_btn.pressed.connect(_on_skip)
 	root.add_child(skip_btn)
-
-	# Center the skip button
-	var skip_container := HBoxContainer.new()
-	skip_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	root.move_child(skip_btn, -1)
 
 func _create_card_panel(card: CardData, index: int) -> PanelContainer:

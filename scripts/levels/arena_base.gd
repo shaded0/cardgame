@@ -138,7 +138,7 @@ func _on_room_cleared() -> void:
 	room_cleared.emit()
 
 	# Save player health for next room
-	var player: CharacterBody2D = GameManager.get_player()
+	var player: PlayerController = GameManager.get_player()
 	if player and player.has_node("HealthComponent"):
 		var health: HealthComponent = player.get_node("HealthComponent")
 		GameManager.player_health_carry = health.current_health
@@ -284,7 +284,7 @@ func _restore_player_health() -> void:
 	if GameManager.player_health_carry <= 0.0:
 		return
 
-	var player: CharacterBody2D = GameManager.get_player()
+	var player: PlayerController = GameManager.get_player()
 	if player == null or not player.has_node("HealthComponent"):
 		return
 
@@ -292,7 +292,7 @@ func _restore_player_health() -> void:
 	health.set_current_health(GameManager.player_health_carry)
 
 func _clamp_player_to_arena() -> void:
-	var player: CharacterBody2D = GameManager.get_player()
+	var player: PlayerController = GameManager.get_player()
 	if player:
 		_clamp_entity_to_arena(player)
 

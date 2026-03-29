@@ -38,7 +38,7 @@ func _populate_card_details() -> void:
 		child.queue_free()
 
 	# Look up the player by group (faster than hardcoding scene paths).
-	var player: CharacterBody2D = GameManager.get_player()
+	var player: PlayerController = GameManager.get_player()
 	if player == null:
 		return
 	var card_mgr: CardManager = player.get_node("CardManager")

@@ -5,8 +5,6 @@ extends CanvasLayer
 
 signal rest_completed
 
-var _upgrade_mode: bool = false
-var _card_buttons: Array[Button] = []
 var _content_root: VBoxContainer
 
 func _ready() -> void:
@@ -65,7 +63,7 @@ func _show_choice_screen() -> void:
 		upgrade_btn.disabled = true
 	upgrade_btn.custom_minimum_size = Vector2(350, 60)
 	upgrade_btn.add_theme_font_size_override("font_size", 20)
-	upgrade_btn.pressed.connect(_on_upgrade_mode)
+	upgrade_btn.pressed.connect(_show_upgrade_screen)
 	_content_root.add_child(upgrade_btn)
 
 func _show_upgrade_screen() -> void:
@@ -89,7 +87,6 @@ func _show_upgrade_screen() -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(list)
 
-	_card_buttons.clear()
 	for i in range(GameManager.run_deck.size()):
 		var card: CardData = GameManager.run_deck[i]
 		if card.upgraded_version == null or card.is_upgraded:
@@ -143,9 +140,6 @@ func _show_upgrade_screen() -> void:
 func _on_rest() -> void:
 	GameManager.player_health_carry = -1.0
 	_complete()
-
-func _on_upgrade_mode() -> void:
-	_show_upgrade_screen()
 
 func _on_upgrade_card(deck_index: int) -> void:
 	var card: CardData = GameManager.run_deck[deck_index]

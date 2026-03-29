@@ -7,8 +7,8 @@
 [ext_resource type="Resource" path="res://resources/cards/neutral/mana_surge.tres" id="5"]
 [ext_resource type="Resource" path="res://resources/cards/soldier/shield_bash.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/cards/soldier/war_cry.tres" id="7"]
-[ext_resource type="Resource" path="res://resources/cards/soldier/iron_fortress.tres" id="8"]
-[ext_resource type="Resource" path="res://resources/cards/soldier/ground_slam.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/intimidate.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/barrier.tres" id="9"]
 
 [resource]
 script = ExtResource("1")

@@ -5,7 +5,7 @@ extends Node2D
 
 var text: String = ""
 var color: Color = Color.WHITE
-var font_size: int = 7
+var font_size: int = 20
 
 func _ready() -> void:
 	var label := Label.new()

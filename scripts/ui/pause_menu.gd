@@ -36,9 +36,8 @@ func _populate_card_details() -> void:
 	var card_mgr: CardManager = player.get_node("CardManager")
 	var mana_comp: ManaComponent = player.get_node("ManaComponent")
 
-	# Hint text
 	var hint := Label.new()
-	hint.add_theme_font_size_override("font_size", 5)
+	hint.add_theme_font_size_override("font_size", 16)
 	hint.add_theme_color_override("font_color", Color(0.5, 0.7, 1.0, 0.8))
 	hint.text = "Press 1-4 to play cards while paused"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -50,7 +49,7 @@ func _populate_card_details() -> void:
 			continue
 
 		var label := Label.new()
-		label.add_theme_font_size_override("font_size", 6)
+		label.add_theme_font_size_override("font_size", 16)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD
 
 		var can_afford: bool = mana_comp.current_mana >= card.mana_cost

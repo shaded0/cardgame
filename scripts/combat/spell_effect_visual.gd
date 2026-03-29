@@ -28,7 +28,7 @@ static func spawn_slash(parent: Node, pos: Vector2, direction: Vector2, color: C
 
 	# Create a slash line
 	var line := Line2D.new()
-	var perp := Vector2(-direction.y, direction.x) * 12.0
+	var perp := Vector2(-direction.y, direction.x) * 36.0
 	line.add_point(-perp)
 	line.add_point(perp)
 	line.width = 3.0
@@ -40,7 +40,7 @@ static func spawn_slash(parent: Node, pos: Vector2, direction: Vector2, color: C
 	var tween: Tween = effect.create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(line, "modulate:a", 0.0, 0.2)
-	tween.tween_property(effect, "position", effect.position + direction * 8.0, 0.2)
+	tween.tween_property(effect, "position", effect.position + direction * 24.0, 0.2)
 	tween.chain().tween_callback(effect.queue_free)
 
 static func spawn_heal(parent: Node, pos: Vector2) -> void:
@@ -50,15 +50,15 @@ static func spawn_heal(parent: Node, pos: Vector2) -> void:
 
 	# Green plus sign
 	var h_line := Line2D.new()
-	h_line.add_point(Vector2(-5, 0))
-	h_line.add_point(Vector2(5, 0))
+	h_line.add_point(Vector2(-15, 0))
+	h_line.add_point(Vector2(15, 0))
 	h_line.width = 2.0
 	h_line.default_color = Color(0.3, 1.0, 0.3, 0.9)
 	effect.add_child(h_line)
 
 	var v_line := Line2D.new()
-	v_line.add_point(Vector2(0, -5))
-	v_line.add_point(Vector2(0, 5))
+	v_line.add_point(Vector2(0, -15))
+	v_line.add_point(Vector2(0, 15))
 	v_line.width = 2.0
 	v_line.default_color = Color(0.3, 1.0, 0.3, 0.9)
 	effect.add_child(v_line)
@@ -77,7 +77,7 @@ static func spawn_shield(parent: Node, pos: Vector2, color: Color = Color(0.4, 0
 	effect.z_index = 4
 
 	var sprite := Sprite2D.new()
-	sprite.texture = PlaceholderSprites.create_circle_texture(14, color)
+	sprite.texture = PlaceholderSprites.create_circle_texture(42, color)
 	sprite.modulate.a = 0.0
 	effect.add_child(sprite)
 
@@ -91,20 +91,20 @@ static func spawn_shield(parent: Node, pos: Vector2, color: Color = Color(0.4, 0
 
 static func spawn_mana_gain(parent: Node, pos: Vector2) -> void:
 	var effect := SpellEffectVisual.new()
-	effect.global_position = pos + Vector2(0, -8)
+	effect.global_position = pos + Vector2(0, -24)
 	effect.z_index = 5
 
 	# Small blue sparkles rising
 	for i in range(3):
 		var dot := Sprite2D.new()
-		dot.texture = PlaceholderSprites.create_circle_texture(2, Color(0.3, 0.5, 1.0, 0.8))
-		dot.position = Vector2(randf_range(-6, 6), randf_range(-2, 2))
+		dot.texture = PlaceholderSprites.create_circle_texture(6, Color(0.3, 0.5, 1.0, 0.8))
+		dot.position = Vector2(randf_range(-18, 18), randf_range(-6, 6))
 		effect.add_child(dot)
 
 	parent.add_child(effect)
 
 	var tween: Tween = effect.create_tween()
 	tween.set_parallel(true)
-	tween.tween_property(effect, "position:y", effect.position.y - 15.0, 0.4).set_ease(Tween.EASE_OUT)
+	tween.tween_property(effect, "position:y", effect.position.y - 45.0, 0.4).set_ease(Tween.EASE_OUT)
 	tween.tween_property(effect, "modulate:a", 0.0, 0.4).set_delay(0.1)
 	tween.chain().tween_callback(effect.queue_free)

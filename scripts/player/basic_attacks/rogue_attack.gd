@@ -2,8 +2,8 @@ extends BaseAttack
 
 ## Fast mid-range knife projectile
 
-const PROJECTILE_SPEED: float = 300.0
-const PROJECTILE_RANGE: float = 200.0
+const PROJECTILE_SPEED: float = 900.0
+const PROJECTILE_RANGE: float = 600.0
 const PROJECTILE_LIFETIME: float = 0.7
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
@@ -13,11 +13,11 @@ func _spawn_knife(player: CharacterBody2D, direction: Vector2) -> void:
 	var projectile := Area2D.new()
 	projectile.collision_layer = 4
 	projectile.collision_mask = 32
-	projectile.global_position = player.global_position + direction * 10.0
+	projectile.global_position = player.global_position + direction * 30.0
 
 	# Visible knife sprite
 	var sprite := Sprite2D.new()
-	sprite.texture = PlaceholderSprites.create_rect_texture(6, 3, Color(0.7, 1.0, 0.7, 0.9))
+	sprite.texture = PlaceholderSprites.create_rect_texture(18, 9, Color(0.7, 1.0, 0.7, 0.9))
 	sprite.rotation = direction.angle()
 	projectile.add_child(sprite)
 
@@ -26,13 +26,13 @@ func _spawn_knife(player: CharacterBody2D, direction: Vector2) -> void:
 	trail.width = 1.5
 	trail.default_color = Color(0.5, 1.0, 0.5, 0.4)
 	trail.add_point(Vector2.ZERO)
-	trail.add_point(-direction * 6.0)
+	trail.add_point(-direction * 18.0)
 	projectile.add_child(trail)
 
 	# Collision
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 4.0
+	circle.radius = 12.0
 	shape.shape = circle
 	projectile.add_child(shape)
 

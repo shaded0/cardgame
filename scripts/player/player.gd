@@ -1,8 +1,8 @@
 extends CharacterBody2D
 
 # Stats (will be set by ClassConfig)
-@export var move_speed: float = 140.0
-@export var dodge_speed: float = 280.0
+@export var move_speed: float = 420.0
+@export var dodge_speed: float = 840.0
 @export var dodge_duration: float = 0.4
 @export var dodge_cooldown: float = 0.8
 @export var attack_duration: float = 0.4
@@ -12,10 +12,11 @@ var facing_direction: Vector2 = Vector2(1, 0.5).normalized()
 var can_dodge: bool = true
 var current_attack: Node = null
 var attack_visual: Sprite2D = null
+var current_anim: StringName = &"idle"
 
 @onready var hitbox: Area2D = $Hitbox
 @onready var hurtbox: Area2D = $Hurtbox
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var mana_component: ManaComponent = $ManaComponent
@@ -24,8 +25,7 @@ var attack_visual: Sprite2D = null
 func _ready() -> void:
 	hitbox_shape.disabled = true
 
-	# Generate placeholder sprite based on class
-	_setup_placeholder_sprite()
+	_setup_animated_sprite()
 
 	# Create attack visual indicator
 	attack_visual = Sprite2D.new()
@@ -46,17 +46,29 @@ func _ready() -> void:
 	if config:
 		apply_class_config(config)
 
-func _setup_placeholder_sprite() -> void:
+func _setup_animated_sprite() -> void:
 	var config: Resource = GameManager.current_class_config
-	var color := Color.CORNFLOWER_BLUE
+	var body_color := Color(0.35, 0.45, 0.6, 1.0)
+	var detail_color := Color(0.5, 0.55, 0.65, 1.0)
+	var weapon := "sword"
 	if config:
 		match config.class_id:
-			&"soldier": color = Color.STEEL_BLUE
-			&"rogue": color = Color.MEDIUM_SEA_GREEN
-			&"mage": color = Color.MEDIUM_PURPLE
-	# Arrow sprite points upward; we rotate it to face the mouse
-	sprite.texture = PlaceholderSprites.create_arrow_texture(16, color)
-	sprite.offset = Vector2(0, -8)  # Draw above feet position
+			&"soldier":
+				body_color = Color(0.35, 0.4, 0.55, 1.0)
+				detail_color = Color(0.55, 0.6, 0.7, 1.0)
+				weapon = "sword"
+			&"rogue":
+				body_color = Color(0.2, 0.35, 0.25, 1.0)
+				detail_color = Color(0.3, 0.5, 0.35, 1.0)
+				weapon = "daggers"
+			&"mage":
+				body_color = Color(0.3, 0.2, 0.45, 1.0)
+				detail_color = Color(0.5, 0.3, 0.7, 1.0)
+				weapon = "staff"
+
+	anim_sprite.sprite_frames = SpriteAnimator.create_humanoid_frames(body_color, detail_color, weapon)
+	anim_sprite.offset = Vector2(0, -24)
+	anim_sprite.play(&"idle")
 
 func _process(_delta: float) -> void:
 	# Always face toward the mouse cursor
@@ -64,8 +76,13 @@ func _process(_delta: float) -> void:
 	var to_mouse: Vector2 = (mouse_pos - global_position)
 	if to_mouse.length() > 2.0:
 		facing_direction = to_mouse.normalized()
-		# Rotate sprite: arrow texture points up (-Y), so offset by -90 degrees
-		sprite.rotation = facing_direction.angle() + PI / 2.0
+		anim_sprite.rotation = facing_direction.angle() + PI / 2.0
+
+func play_anim(anim_name: StringName) -> void:
+	if current_anim != anim_name:
+		current_anim = anim_name
+		if anim_sprite.sprite_frames and anim_sprite.sprite_frames.has_animation(anim_name):
+			anim_sprite.play(anim_name)
 
 func apply_class_config(config: Resource) -> void:
 	move_speed = config.move_speed
@@ -86,7 +103,7 @@ func apply_class_config(config: Resource) -> void:
 		&"soldier": atk_color = Color(0.8, 0.8, 1.0, 0.5)
 		&"rogue": atk_color = Color(0.5, 1.0, 0.5, 0.5)
 		&"mage": atk_color = Color(0.7, 0.4, 1.0, 0.5)
-	attack_visual.texture = PlaceholderSprites.create_circle_texture(10, atk_color)
+	attack_visual.texture = PlaceholderSprites.create_circle_texture(30, atk_color)
 
 	# Load basic attack script
 	if config.attack_script:
@@ -111,11 +128,9 @@ func get_iso_input() -> Vector2:
 	return iso.normalized()
 
 func update_facing(_direction: Vector2) -> void:
-	# Facing is now driven by mouse in _process, this is kept for compatibility
 	pass
 
 func get_aim_direction() -> Vector2:
-	## Returns the direction from player toward the mouse cursor.
 	var mouse_pos: Vector2 = get_global_mouse_position()
 	var dir: Vector2 = (mouse_pos - global_position)
 	if dir.length() < 1.0:
@@ -123,24 +138,23 @@ func get_aim_direction() -> Vector2:
 	return dir.normalized()
 
 func start_attack() -> void:
-	# Attack toward mouse cursor
 	var aim: Vector2 = get_aim_direction()
+	play_anim(&"attack")
 
-	# Show attack visual
 	if attack_visual:
-		attack_visual.position = aim * 18.0
+		attack_visual.position = aim * 55.0
 		attack_visual.visible = true
 
 	if current_attack and current_attack.has_method("execute"):
 		current_attack.execute(self, aim)
 	else:
 		hitbox_shape.disabled = false
-		hitbox.position = aim * 20.0
+		hitbox.position = aim * 60.0
 
 func end_attack() -> void:
-	# Hide attack visual
 	if attack_visual:
 		attack_visual.visible = false
+	play_anim(&"idle")
 
 	if current_attack and current_attack.has_method("end_attack"):
 		current_attack.end_attack(self)

@@ -6,6 +6,7 @@ func enter() -> void:
 	dodge_timer = player.dodge_duration
 	player.can_dodge = false
 	player.set_invincible(true)
+	player.play_anim(&"dodge")
 
 	# Dodge in movement direction if moving, otherwise toward mouse
 	var iso_input: Vector2 = player.get_iso_input()

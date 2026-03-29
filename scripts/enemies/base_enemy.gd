@@ -23,9 +23,9 @@ func _ready() -> void:
 	add_to_group("enemies")
 	hitbox_shape.disabled = true
 
-	# Directional arrow sprite for enemies
-	sprite.texture = PlaceholderSprites.create_arrow_texture(14, Color(0.9, 0.3, 0.3, 1.0))
-	sprite.offset = Vector2(0, -6)
+	# Enemy sprite
+	sprite.texture = PlaceholderSprites.create_enemy_texture(48, Color(0.4, 0.8, 0.3, 1.0), "slime")
+	sprite.offset = Vector2(0, -18)
 
 	if enemy_data:
 		move_speed = enemy_data.move_speed
@@ -84,7 +84,7 @@ func _chase_player(_delta: float) -> void:
 func _do_attack() -> void:
 	can_attack = false
 	hitbox_shape.disabled = false
-	hitbox.position = (player.global_position - global_position).normalized() * 12.0
+	hitbox.position = (player.global_position - global_position).normalized() * 36.0
 
 	# Attack duration
 	var timer: SceneTreeTimer = get_tree().create_timer(0.3)
@@ -111,7 +111,7 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 
 	# Knockback
 	var knockback_dir: Vector2 = (global_position - incoming_hitbox.global_position).normalized()
-	velocity = knockback_dir * 120.0
+	velocity = knockback_dir * 360.0
 
 	current_state = State.HURT
 	var hurt_timer: SceneTreeTimer = get_tree().create_timer(0.15)

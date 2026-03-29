@@ -1,5 +1,8 @@
 extends PlayerState
 
+func enter() -> void:
+	player.play_anim(&"run")
+
 func physics_update(_delta: float) -> void:
 	var iso_dir: Vector2 = player.get_iso_input()
 	if iso_dir == Vector2.ZERO:

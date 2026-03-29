@@ -7,7 +7,7 @@ func execute(player: CharacterBody2D, direction: Vector2) -> void:
 	var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D")
 
 	# Position hitbox close to player in facing direction
-	hitbox.position = direction * 18.0
+	hitbox.position = direction * 54.0
 	hitbox_shape.disabled = false
 	hitbox.damage = player.attack_damage
 
@@ -23,7 +23,7 @@ func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
 	# Draw an arc of points around the facing direction
 	var base_angle: float = direction.angle()
 	var arc_spread: float = 1.2  # radians, ~70 degrees each side
-	var arc_radius: float = 18.0
+	var arc_radius: float = 54.0
 	var num_points: int = 8
 	for i in range(num_points + 1):
 		var t: float = float(i) / float(num_points)

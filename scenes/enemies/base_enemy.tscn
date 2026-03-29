@@ -6,21 +6,20 @@
 [ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="4_health"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
-size = Vector2(10, 6)
+size = Vector2(32, 20)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
-radius = 10.0
+radius = 30.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
-size = Vector2(12, 8)
+size = Vector2(36, 24)
 
 [node name="Enemy" type="CharacterBody2D"]
 collision_layer = 2
 collision_mask = 1
 script = ExtResource("1_enemy")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(0, -8)
+[node name="AnimatedSprite" type="AnimatedSprite2D" parent="."]
 texture_filter = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

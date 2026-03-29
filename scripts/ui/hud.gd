@@ -41,6 +41,10 @@ func _connect_to_player() -> void:
 		var key_hint: Label = card_slots[i].get_node("VBoxContainer/KeyHint")
 		key_hint.text = str(i + 1)
 
+	# Populate hand immediately (we missed the initial hand_updated signal)
+	if card_mgr.hand.size() > 0:
+		_on_hand_updated(card_mgr.hand)
+
 func _find_player() -> CharacterBody2D:
 	var players: Array[Node] = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:

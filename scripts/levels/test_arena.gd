@@ -7,22 +7,25 @@ extends Node2D
 var enemy_scene: PackedScene = preload("res://scenes/enemies/base_enemy.tscn")
 var slime_data: Resource = preload("res://resources/enemy_data/slime_data.tres")
 
-var spawn_timer: float = 4.0
+var spawn_timer: float = 3.5
 var max_enemies: int = 6
-var spawn_radius_min: float = 80.0
-var spawn_radius_max: float = 120.0
+var spawn_radius_min: float = 300.0
+var spawn_radius_max: float = 500.0
 var time_since_spawn: float = 1.0
+
+# Arena boundary
+const ARENA_RADIUS: float = 520.0
 
 func _ready() -> void:
 	queue_redraw()
 
 func _draw() -> void:
 	# Dark background
-	draw_rect(Rect2(-600, -400, 1200, 800), Color(0.06, 0.06, 0.08, 1.0))
+	draw_rect(Rect2(-2000, -1500, 4000, 3000), Color(0.06, 0.06, 0.08, 1.0))
 
 	# Draw isometric diamond floor tiles
-	var tile_w: int = 32
-	var tile_h: int = 16
+	var tile_w: int = 96
+	var tile_h: int = 48
 	var grid_count: int = 8
 
 	for ix in range(-grid_count, grid_count + 1):
@@ -30,17 +33,19 @@ func _draw() -> void:
 			var screen_x: float = float(ix - iy) * (tile_w * 0.5)
 			var screen_y: float = float(ix + iy) * (tile_h * 0.5)
 
-			# Diamond boundary
 			if absi(ix) + absi(iy) > grid_count:
 				continue
 
-			# Checkerboard coloring
 			var is_light: bool = (ix + iy) % 2 == 0
 			var floor_color: Color
 			if is_light:
 				floor_color = Color(0.16, 0.19, 0.24, 1.0)
 			else:
 				floor_color = Color(0.13, 0.16, 0.20, 1.0)
+
+			# Edge tiles are darker to hint at boundary
+			if absi(ix) + absi(iy) == grid_count:
+				floor_color = floor_color.darkened(0.3)
 
 			var hw: float = tile_w * 0.5
 			var hh: float = tile_h * 0.5
@@ -52,7 +57,6 @@ func _draw() -> void:
 			])
 			draw_colored_polygon(points, floor_color)
 
-			# Subtle grid lines
 			var line_color := Color(0.22, 0.26, 0.32, 0.4)
 			draw_polyline(PackedVector2Array([
 				points[0], points[1], points[2], points[3], points[0]
@@ -64,6 +68,21 @@ func _physics_process(delta: float) -> void:
 		time_since_spawn = spawn_timer
 		_try_spawn()
 
+	# Clamp player inside arena
+	_clamp_entity_to_arena($EntityLayer/Player)
+
+func _clamp_entity_to_arena(entity: Node2D) -> void:
+	if entity == null:
+		return
+	var pos: Vector2 = entity.global_position
+	# Use diamond/isometric boundary: |x| + |2y| < radius
+	var ix: float = absf(pos.x)
+	var iy: float = absf(pos.y) * 2.0
+	if ix + iy > ARENA_RADIUS:
+		# Push back inside
+		var scale_factor: float = ARENA_RADIUS / (ix + iy)
+		entity.global_position = pos * scale_factor
+
 func _try_spawn() -> void:
 	var current_enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
 	if current_enemies.size() >= max_enemies:
@@ -72,7 +91,7 @@ func _try_spawn() -> void:
 	var enemy: Node = enemy_scene.instantiate()
 	enemy.enemy_data = slime_data
 
-	# Random position in ring around center
+	# Spawn within arena bounds
 	var angle: float = randf() * TAU
 	var radius: float = spawn_radius_min + randf() * (spawn_radius_max - spawn_radius_min)
 	var offset: Vector2 = Vector2(cos(angle), sin(angle) * 0.5) * radius

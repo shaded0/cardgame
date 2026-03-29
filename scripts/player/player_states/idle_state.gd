@@ -2,6 +2,7 @@ extends PlayerState
 
 func enter() -> void:
 	player.velocity = Vector2.ZERO
+	player.play_anim(&"idle")
 
 func physics_update(_delta: float) -> void:
 	var iso_dir: Vector2 = player.get_iso_input()

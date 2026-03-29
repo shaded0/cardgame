@@ -196,6 +196,53 @@ func _do_attack() -> void:
 		_finish_attack_after(0.3, attack_id)
 		return
 
+	# --- TELEGRAPH PHASE ---
+	# 0.5s wind-up with visual warning so the player can react with cards or dodge.
+	velocity = Vector2.ZERO
+	_spawn_attack_telegraph()
+
+	if not is_inside_tree():
+		return
+	var telegraph_timer: SceneTreeTimer = get_tree().create_timer(0.5)
+	telegraph_timer.timeout.connect(func() -> void:
+		if not is_instance_valid(self) or current_state == State.DEAD or attack_id != _attack_sequence_id:
+			return
+		if _is_frozen:
+			# Freeze interrupted the wind-up — cancel attack, try again later
+			current_state = State.CHASE
+			can_attack = true
+			return
+		_execute_melee_strike(attack_id)
+	)
+
+func _spawn_attack_telegraph() -> void:
+	## Red warning circle that expands during the wind-up. Gives the player a visual cue.
+	var warning := Sprite2D.new()
+	warning.texture = PlaceholderSprites.create_circle_texture(int(attack_range * 1.5), Color(1.0, 0.2, 0.1, 0.35))
+	warning.global_position = global_position
+	warning.z_index = -1
+	warning.scale = Vector2(0.3, 0.3)
+	var parent: Node = get_parent()
+	if parent:
+		parent.add_child(warning)
+		var tween := warning.create_tween()
+		tween.set_parallel(true)
+		tween.tween_property(warning, "scale", Vector2(1.0, 1.0), 0.5).set_ease(Tween.EASE_OUT)
+		tween.tween_property(warning, "modulate:a", 0.0, 0.15).set_delay(0.45)
+		tween.chain().tween_callback(warning.queue_free)
+
+	# Flash the enemy red during wind-up
+	if is_instance_valid(anim_sprite):
+		anim_sprite.modulate = Color(1.5, 0.5, 0.5, 1.0)
+		if is_inside_tree():
+			var flash_timer: SceneTreeTimer = get_tree().create_timer(0.5)
+			flash_timer.timeout.connect(func() -> void:
+				if is_instance_valid(self) and is_instance_valid(anim_sprite):
+					_restore_modulate()
+			)
+
+func _execute_melee_strike(attack_id: int) -> void:
+	## Actually land the hit after the telegraph wind-up.
 	if not _ensure_attack_hitbox_ready():
 		can_attack = true
 		current_state = State.CHASE

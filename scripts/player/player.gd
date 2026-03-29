@@ -9,6 +9,11 @@ extends CharacterBody2D
 @export var attack_duration: float = 0.4
 @export var attack_damage: float = 20.0
 
+## Movement feel tuning — acceleration uses curved ramp for snappy-but-weighty feel.
+@export var acceleration: float = 2800.0  ## Units/s² toward max speed
+@export var deceleration: float = 3600.0  ## Units/s² when releasing input (tighter than accel)
+@export var turn_decel_multiplier: float = 1.6  ## Extra decel when reversing direction
+
 ## Base stats stored so buffs can add/remove from a known baseline.
 var base_move_speed: float = 420.0
 var base_dodge_speed: float = 840.0
@@ -60,6 +65,7 @@ func _ready() -> void:
 	var config: ClassConfig = GameManager.current_class_config
 	if config:
 		apply_class_config(config)
+	_log_attack("ready", {"class": GameManager.current_class_config.class_id if GameManager.current_class_config else "none"})
 
 func _on_player_hit(hb: Hitbox) -> void:
 	## Central damage handler: applies buff reductions, knockback, mana gain.
@@ -216,11 +222,13 @@ func start_attack() -> bool:
 	play_anim(&"attack")
 	_attack_active = true
 	_attack_elapsed = 0.0
+	_log_attack("start_attack", {"aim": aim, "controller_valid": is_instance_valid(current_attack), "state": _get_state_name()})
 
 	# Guard against freed hitbox during scene transitions.
 	if not is_instance_valid(hitbox):
 		_attack_active = false
 		_disable_attack_hitbox()
+		_log_attack("start_attack_failed_missing_hitbox")
 		return false
 
 	# Reset hitbox target tracking so each swing can hit enemies again.
@@ -236,16 +244,20 @@ func start_attack() -> bool:
 	var attack_controller: Node = _ensure_attack_controller()
 	if attack_controller and attack_controller.has_method("execute"):
 		attack_controller.execute(self, aim)
+		_log_attack("start_attack_executed", {"controller": attack_controller.name, "duration": attack_duration})
 	elif attack_controller == null and GameManager.current_class_config and GameManager.current_class_config.attack_script:
 		_attack_active = false
 		_disable_attack_hitbox()
+		_log_attack("start_attack_failed_missing_controller")
 		return false
 	else:
 		hitbox_shape.disabled = false
 		hitbox.position = aim * 60.0
+		_log_attack("start_attack_fallback_melee", {"duration": attack_duration})
 	return true
 
 func end_attack() -> void:
+	_log_attack("end_attack", {"elapsed": snapped(_attack_elapsed, 0.001), "state": _get_state_name()})
 	_attack_active = false
 	_attack_elapsed = 0.0
 	if attack_visual:
@@ -278,6 +290,7 @@ func _flash_hurt() -> void:
 
 func force_end_attack() -> void:
 	## Hard stop used by watchdog/self-healing paths when attack state desyncs.
+	_log_attack("force_end_attack", {"elapsed": snapped(_attack_elapsed, 0.001), "state": _get_state_name()})
 	_attack_active = false
 	_attack_elapsed = 0.0
 	if attack_visual:
@@ -296,12 +309,14 @@ func _update_attack_watchdog(delta: float) -> void:
 		return
 
 	# If we stayed "attacking" longer than expected, clear combat state so input can recover.
+	_log_attack("watchdog_timeout", {"elapsed": snapped(_attack_elapsed, 0.001), "timeout": attack_timeout, "state": _get_state_name()})
 	force_end_attack()
 
 func _ensure_attack_controller(rebuild_if_missing: bool = true) -> Node:
 	if is_instance_valid(current_attack):
 		return current_attack
 
+	_log_attack("missing_attack_controller", {"rebuild": rebuild_if_missing})
 	current_attack = null
 	if not rebuild_if_missing:
 		return null
@@ -315,6 +330,7 @@ func _rebuild_attack_controller(attack_script: Script) -> Node:
 	current_attack = null
 
 	if attack_script == null:
+		_log_attack("rebuild_attack_controller_skipped")
 		return null
 
 	var attack_node := Node.new()
@@ -324,6 +340,7 @@ func _rebuild_attack_controller(attack_script: Script) -> Node:
 	current_attack = attack_node
 	if current_attack.has_method("get_attack_duration"):
 		attack_duration = current_attack.get_attack_duration()
+	_log_attack("rebuild_attack_controller", {"controller": current_attack.name, "duration": attack_duration})
 	return current_attack
 
 func _disable_attack_hitbox() -> void:
@@ -331,3 +348,11 @@ func _disable_attack_hitbox() -> void:
 		hitbox_shape.set_deferred("disabled", true)
 	if is_instance_valid(hitbox):
 		hitbox.position = Vector2.ZERO
+
+func _get_state_name() -> String:
+	if state_machine == null or state_machine.current_state == null:
+		return "none"
+	return state_machine.current_state.name.to_lower()
+
+func _log_attack(event: String, details: Dictionary = {}) -> void:
+	GameManager.log_attack("player", event, details)

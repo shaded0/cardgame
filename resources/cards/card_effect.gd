@@ -7,7 +7,7 @@ extends Resource
 enum EffectType { DAMAGE, HEAL, BUFF, AOE, PROJECTILE, SUMMON, MANA_GEN, SHIELD, DEBUFF, MULTI_HIT }
 enum TargetMode { NEAREST_ENEMY, CURSOR, SELF, ALL_ENEMIES, AREA_AT_CURSOR }
 enum BuffType { DAMAGE_UP, SPEED_UP, DEFENSE_UP, EMPOWER_NEXT, DODGE_BOOST }
-enum DebuffType { VULNERABLE, WEAK }
+enum DebuffType { VULNERABLE, WEAK, FREEZE }
 
 @export var type: EffectType = EffectType.DAMAGE
 @export var value: float = 10.0

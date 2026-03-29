@@ -20,6 +20,7 @@ var run_deck: Array[CardData] = []     ## Cards accumulated during the run
 
 # All rooms loaded at run start
 var all_rooms: Array[RoomData] = []
+var debug_attack_logging: bool = true
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
@@ -115,3 +116,18 @@ func _change_scene(path: String) -> void:
 		tree.paused = false
 		game_resumed.emit()
 	tree.change_scene_to_file(path)
+
+func log_attack(source: String, event: String, details: Dictionary = {}) -> void:
+	if not debug_attack_logging or not OS.is_debug_build():
+		return
+
+	var detail_text := ""
+	for key in details.keys():
+		if not detail_text.is_empty():
+			detail_text += ", "
+		detail_text += "%s=%s" % [str(key), str(details[key])]
+
+	if not detail_text.is_empty():
+		detail_text = " | " + detail_text
+
+	print("[ATTACK][%s][%d] %s%s" % [source, Time.get_ticks_msec(), event, detail_text])

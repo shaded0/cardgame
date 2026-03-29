@@ -37,11 +37,19 @@ func add_debuff(debuff: Debuff) -> void:
 	_show_debuff_text(debuff)
 	_update_tint()
 
+	# FREEZE: tell the enemy to stop all actions.
+	if debuff.type == Debuff.Type.FREEZE and enemy and enemy.has_method("set_frozen"):
+		enemy.set_frozen(true)
+
 func remove_debuff(debuff: Debuff) -> void:
 	if debuff in active_debuffs:
 		active_debuffs.erase(debuff)
 		debuff_expired.emit(debuff)
 		_update_tint()
+
+		# Unfreeze when FREEZE expires.
+		if debuff.type == Debuff.Type.FREEZE and enemy and enemy.has_method("set_frozen"):
+			enemy.set_frozen(false)
 
 func get_damage_multiplier() -> float:
 	## Returns 1.5 if VULNERABLE, else 1.0. Applied to incoming damage.
@@ -79,6 +87,9 @@ func _show_debuff_text(debuff: Debuff) -> void:
 		Debuff.Type.WEAK:
 			text = "WEAK"
 			color = Color(0.4, 0.6, 1.0)
+		Debuff.Type.FREEZE:
+			text = "FROZEN"
+			color = Color(0.5, 0.9, 1.0)
 
 	# Floating status text above the enemy
 	var label := Label.new()
@@ -102,8 +113,10 @@ func _update_tint() -> void:
 	if anim == null:
 		return
 
-	# Blend tint based on active debuffs
-	if has_debuff_type(Debuff.Type.VULNERABLE) and has_debuff_type(Debuff.Type.WEAK):
+	# Blend tint based on active debuffs — FREEZE takes visual priority
+	if has_debuff_type(Debuff.Type.FREEZE):
+		anim.modulate = Color(0.5, 0.8, 1.5, 1.0)  # Icy blue — clearly frozen
+	elif has_debuff_type(Debuff.Type.VULNERABLE) and has_debuff_type(Debuff.Type.WEAK):
 		anim.modulate = Color(1.3, 0.6, 1.3, 1.0)  # Purple = both
 	elif has_debuff_type(Debuff.Type.VULNERABLE):
 		anim.modulate = Color(1.4, 0.7, 0.7, 1.0)  # Red tint

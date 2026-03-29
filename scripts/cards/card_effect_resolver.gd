@@ -132,7 +132,36 @@ func _resolve_buff(effect: CardEffect) -> void:
 	buff_sys.add_buff(buff)
 
 func _resolve_debuff(effect: CardEffect) -> void:
-	## Apply debuff to target enemy's DebuffSystem.
+	## Apply debuff to target(s). Supports AOE modes for FREEZE-all-in-range patterns.
+	var debuff_t: Debuff.Type
+	match effect.debuff_type:
+		CardEffect.DebuffType.WEAK:
+			debuff_t = Debuff.Type.WEAK
+		CardEffect.DebuffType.FREEZE:
+			debuff_t = Debuff.Type.FREEZE
+		_:
+			debuff_t = Debuff.Type.VULNERABLE
+
+	var duration: float = effect.duration if effect.duration > 0.0 else 5.0
+
+	# AOE debuff: apply to all enemies in radius (used by Frost Nova, Ground Slam)
+	if effect.target_mode == CardEffect.TargetMode.ALL_ENEMIES or (effect.target_mode == CardEffect.TargetMode.AREA_AT_CURSOR and effect.radius > 0.0):
+		var center: Vector2 = player.global_position
+		if effect.target_mode == CardEffect.TargetMode.AREA_AT_CURSOR:
+			center = player.get_global_mouse_position()
+		var enemies: Array[Node] = GameManager.get_enemies()
+		for enemy in enemies:
+			if not (enemy is Node2D) or not is_instance_valid(enemy):
+				continue
+			# If radius is set, only affect enemies in range. Otherwise affect all.
+			if effect.radius > 0.0 and enemy.global_position.distance_to(center) > effect.radius:
+				continue
+			var debuff_sys: Node = enemy.get_node_or_null("DebuffSystem")
+			if debuff_sys and debuff_sys.has_method("add_debuff"):
+				debuff_sys.call("add_debuff", Debuff.create(debuff_t, duration))
+		return
+
+	# Single-target debuff
 	var target: Node2D = _find_target(effect.target_mode)
 	if target == null:
 		return
@@ -141,16 +170,7 @@ func _resolve_debuff(effect: CardEffect) -> void:
 	if debuff_sys == null or not debuff_sys.has_method("add_debuff"):
 		return
 
-	var debuff_t: Debuff.Type
-	match effect.debuff_type:
-		CardEffect.DebuffType.WEAK:
-			debuff_t = Debuff.Type.WEAK
-		_:
-			debuff_t = Debuff.Type.VULNERABLE
-
-	var duration: float = effect.duration if effect.duration > 0.0 else 5.0
-	var debuff: Debuff = Debuff.create(debuff_t, duration)
-	debuff_sys.call("add_debuff", debuff)
+	debuff_sys.call("add_debuff", Debuff.create(debuff_t, duration))
 
 func _resolve_multi_hit(effect: CardEffect, is_x_cost: bool = false) -> void:
 	## Deal damage N times with staggered visuals.

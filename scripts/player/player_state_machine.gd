@@ -47,9 +47,11 @@ func transition_to(state_name: String) -> void:
 	if not states.has(state_name):
 		push_warning("State '%s' not found" % state_name)
 		return
+	var previous_state_name := "none" if current_state == null else current_state.name.to_lower()
 	if current_state:
 		current_state.exit()
 	current_state = states[state_name]
+	GameManager.log_attack("state_machine", "transition", {"from": previous_state_name, "to": state_name})
 	current_state.enter()
 
 func is_in_state(state_name: String) -> bool:
@@ -59,6 +61,7 @@ func recover_to_neutral() -> void:
 	var player_node: PlayerController = get_parent() as PlayerController
 	if player_node == null:
 		return
+	GameManager.log_attack("state_machine", "recover_to_neutral", {"attack_buffer": has_attack_buffer(), "dodge_buffer": has_dodge_buffer()})
 	if consume_attack_buffer():
 		transition_to("attack")
 	elif player_node.can_dodge and consume_dodge_buffer():
@@ -70,9 +73,11 @@ func recover_to_neutral() -> void:
 
 func buffer_attack_input() -> void:
 	_attack_buffer_remaining = INPUT_BUFFER_DURATION
+	GameManager.log_attack("state_machine", "buffer_attack", {"state": current_state.name.to_lower() if current_state else "none"})
 
 func buffer_dodge_input() -> void:
 	_dodge_buffer_remaining = INPUT_BUFFER_DURATION
+	GameManager.log_attack("state_machine", "buffer_dodge", {"state": current_state.name.to_lower() if current_state else "none"})
 
 func consume_attack_buffer() -> bool:
 	if _attack_buffer_remaining <= 0.0:

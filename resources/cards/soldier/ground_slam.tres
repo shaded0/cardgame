@@ -12,13 +12,21 @@ radius = 60.0
 duration = 0.0
 target_mode = 2
 
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("2")
+type = 8
+value = 0.0
+radius = 60.0
+duration = 1.5
+target_mode = 3
+debuff_type = 2
+
 [resource]
 script = ExtResource("1")
 card_name = "Ground Slam"
 card_class = 1
-description = "Slam the ground, damaging all nearby enemies."
+description = "Slam the ground for 20 AOE damage and FREEZE all nearby enemies for 1.5s."
 mana_cost = 25
 generates_mana = 0
-pauses_game = true
-effects = Array[Resource]([SubResource("effect_1")])
+effects = Array[Resource]([SubResource("effect_1"), SubResource("effect_2")])
 upgraded_version = ExtResource("3_upgrade")

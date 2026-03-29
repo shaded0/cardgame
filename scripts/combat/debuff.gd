@@ -7,6 +7,7 @@ extends RefCounted
 enum Type {
 	VULNERABLE,  ## Takes 50% more damage
 	WEAK,        ## Deals 25% less damage
+	FREEZE,      ## Completely stops movement and attacks — cards create safe windows
 }
 
 var type: Type

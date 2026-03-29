@@ -8,13 +8,16 @@ func enter() -> void:
 	# Attack duration is configurable in class data.
 	attack_timer = player.attack_duration
 	player.velocity = Vector2.ZERO
+	GameManager.log_attack("attack_state", "enter", {"duration": attack_timer})
 	if not player.start_attack():
+		GameManager.log_attack("attack_state", "enter_failed")
 		state_machine.call_deferred("recover_to_neutral")
 
 func physics_update(delta: float) -> void:
 	# Return to idle once hitbox window ends.
 	attack_timer -= delta
 	if attack_timer <= 0.0:
+		GameManager.log_attack("attack_state", "timer_complete")
 		player.end_attack()
 		if state_machine.consume_attack_buffer():
 			state_machine.transition_to("attack")
@@ -27,4 +30,5 @@ func physics_update(delta: float) -> void:
 
 func exit() -> void:
 	# Safety: ensure every exit resets attack visuals/hitbox.
+	GameManager.log_attack("attack_state", "exit")
 	player.end_attack()

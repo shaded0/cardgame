@@ -7,13 +7,17 @@ extends Node
 signal card_played(card: CardData, slot_index: int, mana_spent: float)
 signal hand_updated(hand: Array[CardData])
 signal card_exhausted(card: CardData)
+signal tactical_focus_changed(active: bool)
 
 const HAND_SIZE: int = 4
+const TACTICAL_TIME_SCALE: float = 0.15  ## 15% speed — slow enough to read cards, fast enough to feel alive
 
 var deck: Array[CardData] = []
 var draw_pile: Array[CardData] = []
 var hand: Array[CardData] = []
 var exhaust_pile: Array[CardData] = []
+var _tactical_focus_active: bool = false
+var _base_time_scale: float = 1.0  ## Track non-tactical time scale so hitstop/etc. can coexist
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -34,11 +38,38 @@ func initialize_deck(card_pool: Array[CardData]) -> void:
 
 	hand_updated.emit(hand.duplicate())
 
+func _process(_delta: float) -> void:
+	# Tactical focus: hold RMB or Shift to slow time while choosing cards.
+	# Using _process instead of _input because we need to detect held state, not just press/release.
+	if get_tree().paused:
+		# Don't fight with the pause system
+		if _tactical_focus_active:
+			_end_tactical_focus()
+		return
+
+	if Input.is_action_pressed("tactical_focus"):
+		if not _tactical_focus_active:
+			_begin_tactical_focus()
+	else:
+		if _tactical_focus_active:
+			_end_tactical_focus()
+
 func _unhandled_input(event: InputEvent) -> void:
 	for i in range(HAND_SIZE):
 		if event.is_action_pressed("play_card_%d" % (i + 1)):
 			try_play_card(i)
 			return
+
+func _begin_tactical_focus() -> void:
+	_tactical_focus_active = true
+	_base_time_scale = Engine.time_scale
+	Engine.time_scale = TACTICAL_TIME_SCALE
+	tactical_focus_changed.emit(true)
+
+func _end_tactical_focus() -> void:
+	_tactical_focus_active = false
+	Engine.time_scale = _base_time_scale
+	tactical_focus_changed.emit(false)
 
 func try_play_card(slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= hand.size():
@@ -67,17 +98,14 @@ func try_play_card(slot_index: int) -> void:
 	if card.generates_mana > 0:
 		mana_comp.add_mana(card.generates_mana)
 
-	var was_paused: bool = get_tree().paused
-	if was_paused:
+	# If paused (legacy path), unpause on card play.
+	if get_tree().paused:
 		GameManager.toggle_pause()
 
 	card_played.emit(card, slot_index, mana_to_spend)
 
 	_replace_card(slot_index, card)
 	hand_updated.emit(hand.duplicate())
-
-	if card.pauses_game and not was_paused:
-		_pause_after_delay(0.4)
 
 func _replace_card(slot_index: int, played_card: CardData) -> void:
 	# Chain cards transform into a follow-up card.
@@ -92,15 +120,6 @@ func _replace_card(slot_index: int, played_card: CardData) -> void:
 		card_exhausted.emit(played_card)
 
 	hand[slot_index] = _draw_next_card()
-
-func _pause_after_delay(delay: float) -> void:
-	var timer: SceneTreeTimer = get_tree().create_timer(delay, true, false, true)
-	timer.timeout.connect(func() -> void:
-		if not is_instance_valid(self) or not is_inside_tree():
-			return
-		if not get_tree().paused:
-			GameManager.toggle_pause()
-	)
 
 func can_play_card(card: CardData, available_mana: float) -> bool:
 	if card == null:

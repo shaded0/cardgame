@@ -13,7 +13,9 @@ static func shake(node: Node, intensity: float = 8.0, duration: float = 0.15) ->
 		return
 
 	# Keep only one active shake tween per camera to avoid tween pileups during dense combat.
-	var existing_tween = camera.get_meta("_screenfx_shake_tween", null) as Tween
+	var existing_tween: Tween = null
+	if camera.has_meta("_screenfx_shake_tween"):
+		existing_tween = camera.get_meta("_screenfx_shake_tween") as Tween
 	if existing_tween and existing_tween.is_valid():
 		existing_tween.kill()
 

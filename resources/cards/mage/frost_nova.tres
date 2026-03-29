@@ -16,19 +16,18 @@ target_mode = 4
 script = ExtResource("2")
 type = 8
 value = 0.0
-radius = 0.0
-duration = 6.0
-target_mode = 0
-debuff_type = 1
+radius = 80.0
+duration = 2.5
+target_mode = 4
+debuff_type = 2
 
 [resource]
 script = ExtResource("1")
 card_name = "Frost Nova"
 card_class = 3
 rarity = 1
-description = "Deal 8 AOE damage and apply Weak to nearest enemy for 6s."
+description = "Deal 8 AOE damage and FREEZE all nearby enemies for 2.5s."
 mana_cost = 25
 generates_mana = false
-pauses_game = true
 effects = Array[Resource]([SubResource("effect_1"), SubResource("effect_2")])
 upgraded_version = ExtResource("3_upgrade")

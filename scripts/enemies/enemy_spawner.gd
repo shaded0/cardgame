@@ -23,7 +23,7 @@ func _physics_process(delta: float) -> void:
 
 func _try_spawn() -> void:
 	# Respect a hard cap so arena doesn't get overwhelmed.
-	var current_enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
+	var current_enemies: Array[Node] = GameManager.get_enemies()
 	if current_enemies.size() >= max_enemies:
 		return
 

@@ -8,6 +8,7 @@ const TIER_SPACING: float = 160.0
 const NODE_RADIUS: float = 28.0
 
 var room_buttons: Dictionary = {}  # room_id -> Button
+var room_button_pulses: Dictionary = {}  # room_id -> Tween
 
 func _ready() -> void:
 	if not GameManager.run_active:
@@ -17,6 +18,8 @@ func _ready() -> void:
 	GameManager.room_completed.connect(_on_room_completed)
 
 func _build_map() -> void:
+	_clear_room_button_pulses()
+
 	# Clear existing
 	for child in get_children():
 		if child.name != "Background" and child.name != "Title" and child.name != "MapLines":
@@ -76,7 +79,7 @@ func _build_map() -> void:
 		var start_x: float = screen_center.x - tier_width / 2.0
 
 		for i in range(rooms_in_tier.size()):
-			var room: Resource = rooms_in_tier[i]
+			var room: RoomData = rooms_in_tier[i]
 			var pos := Vector2(start_x + i * 200.0, tier_y)
 			room_positions[room.room_id] = pos
 			_create_room_node(room, pos)
@@ -87,7 +90,7 @@ func _build_map() -> void:
 	# Update button states
 	_refresh_button_states()
 
-func _create_room_node(room: Resource, pos: Vector2) -> void:
+func _create_room_node(room: RoomData, pos: Vector2) -> void:
 	var btn := Button.new()
 	btn.name = "Room_" + room.room_id
 	btn.custom_minimum_size = Vector2(160, 70)
@@ -128,6 +131,8 @@ func _refresh_button_states() -> void:
 		if btn == null:
 			continue
 
+		_stop_room_button_pulse(room.room_id)
+
 		if room.room_id in GameManager.completed_rooms:
 			# Completed — dimmed
 			btn.modulate = Color(0.4, 0.5, 0.4, 0.7)
@@ -136,16 +141,13 @@ func _refresh_button_states() -> void:
 			# Available — glowing
 			btn.modulate = Color(1.0, 1.0, 1.0, 1.0)
 			btn.disabled = false
-			# Pulse effect
-			var tween: Tween = btn.create_tween().set_loops()
-			tween.tween_property(btn, "modulate:a", 0.7, 0.6)
-			tween.tween_property(btn, "modulate:a", 1.0, 0.6)
+			_start_room_button_pulse(room.room_id, btn)
 		else:
 			# Locked
 			btn.modulate = Color(0.3, 0.3, 0.3, 0.5)
 			btn.disabled = true
 
-func _on_room_clicked(room: Resource) -> void:
+func _on_room_clicked(room: RoomData) -> void:
 	if not GameManager.is_room_available(room):
 		return
 
@@ -171,3 +173,19 @@ func _on_room_clicked(room: Resource) -> void:
 
 func _on_room_completed(_room_id: String) -> void:
 	_refresh_button_states()
+
+func _start_room_button_pulse(room_id: String, btn: Button) -> void:
+	var tween: Tween = btn.create_tween().set_loops()
+	tween.tween_property(btn, "modulate:a", 0.7, 0.6)
+	tween.tween_property(btn, "modulate:a", 1.0, 0.6)
+	room_button_pulses[room_id] = tween
+
+func _stop_room_button_pulse(room_id: String) -> void:
+	var tween: Tween = room_button_pulses.get(room_id) as Tween
+	if tween and tween.is_valid():
+		tween.kill()
+	room_button_pulses.erase(room_id)
+
+func _clear_room_button_pulses() -> void:
+	for room_id in room_button_pulses.keys():
+		_stop_room_button_pulse(room_id)

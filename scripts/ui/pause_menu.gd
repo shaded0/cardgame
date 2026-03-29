@@ -38,11 +38,9 @@ func _populate_card_details() -> void:
 		child.queue_free()
 
 	# Look up the player by group (faster than hardcoding scene paths).
-	var players: Array[Node] = get_tree().get_nodes_in_group("player")
-	if players.size() == 0:
+	var player: CharacterBody2D = GameManager.get_player()
+	if player == null:
 		return
-
-	var player: CharacterBody2D = players[0] as CharacterBody2D
 	var card_mgr: CardManager = player.get_node("CardManager")
 	var mana_comp: ManaComponent = player.get_node("ManaComponent")
 
@@ -55,7 +53,7 @@ func _populate_card_details() -> void:
 
 	# Create one label per card slot and color it based on affordability.
 	for i in range(card_mgr.hand.size()):
-		var card: Resource = card_mgr.hand[i]
+		var card: CardData = card_mgr.hand[i]
 		if card == null:
 			continue
 
@@ -82,4 +80,4 @@ func _on_resume() -> void:
 func _on_quit() -> void:
 	# Exiting pause before changing scene avoids getting stuck in paused game state.
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://scenes/ui/class_select.tscn")
+	GameManager.go_to_class_select()

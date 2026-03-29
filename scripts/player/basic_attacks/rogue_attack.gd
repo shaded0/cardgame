@@ -1,18 +1,19 @@
 extends BaseAttack
 
-## Fast mid-range knife projectile
-## Projectile is thrown from the player and dies after travel distance/time.
+## Fast mid-range knife projectile — one-shot: destroys on first hit.
 
 const PROJECTILE_SPEED: float = 900.0
 const PROJECTILE_RANGE: float = 600.0
 const PROJECTILE_LIFETIME: float = 0.7
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
-	# Spawn one projectile each basic attack input.
 	_spawn_knife(player, direction)
 
 func _spawn_knife(player: CharacterBody2D, direction: Vector2) -> void:
-	# Create a lightweight Area2D so we can collide with enemies and apply damage.
+	var parent: Node = player.get_parent()
+	if parent == null or not is_instance_valid(parent):
+		return
+
 	var projectile := Area2D.new()
 	projectile.collision_layer = 4
 	projectile.collision_mask = 32
@@ -39,15 +40,15 @@ func _spawn_knife(player: CharacterBody2D, direction: Vector2) -> void:
 	shape.shape = circle
 	projectile.add_child(shape)
 
-	# Hitbox script
+	# Hitbox script — one-shot so it destroys on first enemy hit.
 	var hitbox_script: Script = load("res://scripts/combat/hitbox.gd")
 	projectile.set_script(hitbox_script)
-	projectile.damage = player.attack_damage
+	projectile.set("damage", player.get_effective_damage() if player.has_method("get_effective_damage") else player.attack_damage)
+	projectile.set("one_shot", true)
 
 	var dir: Vector2 = direction.normalized()
-	player.get_parent().add_child(projectile)
+	parent.add_child(projectile)
 
-	# Use tween-based travel for deterministic lifetime/trajectory.
 	var tween: Tween = projectile.create_tween()
 	var end_pos: Vector2 = projectile.global_position + dir * PROJECTILE_RANGE
 	tween.tween_property(projectile, "global_position", end_pos, PROJECTILE_LIFETIME)

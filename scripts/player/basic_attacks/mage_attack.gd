@@ -1,18 +1,19 @@
 extends BaseAttack
 
-## Slow long-range magic bolt
-## The bolt moves with a tween and shows a glow trail while active.
+## Slow long-range magic bolt — pierces through enemies (no one_shot).
 
 const PROJECTILE_SPEED: float = 540.0
 const PROJECTILE_RANGE: float = 1200.0
 const PROJECTILE_LIFETIME: float = 2.2
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
-	# Fire a magic bolt toward cursor direction.
 	_spawn_bolt(player, direction)
 
 func _spawn_bolt(player: CharacterBody2D, direction: Vector2) -> void:
-	# Build a temporary projectile with both impact and trail visual elements.
+	var parent: Node = player.get_parent()
+	if parent == null or not is_instance_valid(parent):
+		return
+
 	var projectile := Area2D.new()
 	projectile.collision_layer = 4
 	projectile.collision_mask = 32
@@ -23,7 +24,7 @@ func _spawn_bolt(player: CharacterBody2D, direction: Vector2) -> void:
 	sprite.texture = PlaceholderSprites.create_circle_texture(12, Color(0.6, 0.3, 1.0, 0.9))
 	projectile.add_child(sprite)
 
-	# Glow aura behind it
+	# Glow aura
 	var glow := Sprite2D.new()
 	glow.texture = PlaceholderSprites.create_circle_texture(18, Color(0.5, 0.2, 0.8, 0.25))
 	glow.z_index = -1
@@ -44,12 +45,12 @@ func _spawn_bolt(player: CharacterBody2D, direction: Vector2) -> void:
 	shape.shape = circle
 	projectile.add_child(shape)
 
-	# Hitbox
+	# Hitbox — mage bolt pierces (one_shot = false by default).
 	var hitbox_script: Script = load("res://scripts/combat/hitbox.gd")
 	projectile.set_script(hitbox_script)
-	projectile.damage = player.attack_damage
+	projectile.set("damage", player.get_effective_damage() if player.has_method("get_effective_damage") else player.attack_damage)
 
-	player.get_parent().add_child(projectile)
+	parent.add_child(projectile)
 
 	# Pulse the glow
 	var glow_tween: Tween = glow.create_tween().set_loops()

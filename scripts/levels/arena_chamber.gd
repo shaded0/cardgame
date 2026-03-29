@@ -1,4 +1,4 @@
-extends "res://scripts/levels/arena_base.gd"
+extends ArenaBase
 
 ## Open chamber with scattered pillars for cover.
 

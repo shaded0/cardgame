@@ -23,5 +23,5 @@ extends Resource
 # Class-specific
 ## Script and card pool are swapped in class-specific resources to change gameplay without code.
 @export var attack_script: Script
-@export var card_pool: Array[Resource] = []
+@export var card_pool: Array[CardData] = []
 @export var sprite_frames: SpriteFrames

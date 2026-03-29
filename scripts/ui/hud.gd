@@ -49,9 +49,9 @@ func _connect_to_player() -> void:
 		_on_hand_updated(card_mgr.hand)
 
 func _find_player() -> CharacterBody2D:
-	var players: Array[Node] = get_tree().get_nodes_in_group("player")
-	if players.size() > 0:
-		return players[0] as CharacterBody2D
+	var player: CharacterBody2D = GameManager.get_player()
+	if player:
+		return player
 	# Fallback: find by name
 	var arena: Node = get_parent().get_parent()
 	return arena.find_child("Player", true, false) as CharacterBody2D

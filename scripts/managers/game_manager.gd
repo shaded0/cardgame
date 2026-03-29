@@ -6,8 +6,11 @@ signal room_completed(room_id: String)
 
 ## Game-wide state: pause, class selection, and run progression.
 
-var current_class_config: Resource = null
-var current_room: Resource = null  ## RoomData
+const MAP_SCENE_PATH := "res://scenes/map/map.tscn"
+const CLASS_SELECT_SCENE_PATH := "res://scenes/ui/class_select.tscn"
+
+var current_class_config: ClassConfig = null
+var current_room: RoomData = null
 
 # Run state
 var run_active: bool = false
@@ -15,7 +18,7 @@ var completed_rooms: Array[String] = []
 var player_health_carry: float = -1.0  ## -1 means use max_health
 
 # All rooms loaded at run start
-var all_rooms: Array[Resource] = []
+var all_rooms: Array[RoomData] = []
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("pause"):
@@ -28,6 +31,18 @@ func toggle_pause() -> void:
 		game_paused.emit()
 	else:
 		game_resumed.emit()
+
+func get_player() -> CharacterBody2D:
+	return _get_first_node_in_group(&"player") as CharacterBody2D
+
+func get_enemies() -> Array[Node]:
+	return get_tree().get_nodes_in_group(&"enemies")
+
+func go_to_map() -> void:
+	get_tree().change_scene_to_file(MAP_SCENE_PATH)
+
+func go_to_class_select() -> void:
+	get_tree().change_scene_to_file(CLASS_SELECT_SCENE_PATH)
 
 func start_new_run() -> void:
 	run_active = true
@@ -47,7 +62,7 @@ func _load_all_rooms() -> void:
 		"res://resources/rooms/boss_chamber.tres",
 	]
 	for path in room_paths:
-		var room: Resource = load(path)
+		var room: RoomData = load(path) as RoomData
 		if room:
 			all_rooms.append(room)
 
@@ -56,7 +71,7 @@ func complete_room(room_id: String) -> void:
 		completed_rooms.append(room_id)
 	room_completed.emit(room_id)
 
-func is_room_available(room: Resource) -> bool:
+func is_room_available(room: RoomData) -> bool:
 	var room_id: String = room.room_id
 	if room_id in completed_rooms:
 		return false
@@ -69,16 +84,22 @@ func is_room_available(room: Resource) -> bool:
 			return true
 	return false
 
-func get_room_by_id(room_id: String) -> Resource:
+func get_room_by_id(room_id: String) -> RoomData:
 	for room in all_rooms:
 		if room.room_id == room_id:
 			return room
 	return null
 
-func enter_room(room: Resource) -> void:
+func enter_room(room: RoomData) -> void:
 	current_room = room
 	if room.room_type == 2:  # REST
 		player_health_carry = -1.0  # Full heal
 		complete_room(room.room_id)
 	else:
 		get_tree().change_scene_to_file(room.arena_scene_path)
+
+func _get_first_node_in_group(group_name: StringName) -> Node:
+	var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
+	if nodes.is_empty():
+		return null
+	return nodes[0]

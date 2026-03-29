@@ -1,4 +1,4 @@
-extends "res://scripts/levels/arena_base.gd"
+extends ArenaBase
 
 ## Large boss arena with corner pillars.
 

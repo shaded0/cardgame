@@ -4,20 +4,20 @@ extends Node
 ## Owns deck/draw hand lifecycle and handles input for numbered card slots.
 ## Emits signals so UI and gameplay systems stay decoupled.
 
-signal card_played(card: Resource, slot_index: int)
-signal hand_updated(hand: Array)
+signal card_played(card: CardData, slot_index: int)
+signal hand_updated(hand: Array[CardData])
 
 const HAND_SIZE: int = 4
 
-var deck: Array[Resource] = []
-var draw_pile: Array[Resource] = []
-var hand: Array[Resource] = []
+var deck: Array[CardData] = []
+var draw_pile: Array[CardData] = []
+var hand: Array[CardData] = []
 
 func _ready() -> void:
 	# Input must still work in pause overlay, so use PROCESS_MODE_ALWAYS.
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-func initialize_deck(card_pool: Array) -> void:
+func initialize_deck(card_pool: Array[CardData]) -> void:
 	# Duplicate resources so we can mutate draw/hand without touching class config assets.
 	deck = card_pool.duplicate()
 	draw_pile = deck.duplicate()
@@ -45,7 +45,7 @@ func try_play_card(slot_index: int) -> void:
 	if slot_index < 0 or slot_index >= hand.size():
 		return
 
-	var card: Resource = hand[slot_index]
+	var card: CardData = hand[slot_index]
 	if card == null:
 		return
 
@@ -82,7 +82,7 @@ func try_play_card(slot_index: int) -> void:
 	if card.pauses_game and not was_paused:
 		_pause_after_delay(0.4)
 
-func _replace_card(slot_index: int, played_card: Resource) -> void:
+func _replace_card(slot_index: int, played_card: CardData) -> void:
 	# Chain cards allow a card to become another card when played (e.g., combos).
 	if played_card.chain_card != null:
 		hand[slot_index] = played_card.chain_card
@@ -98,7 +98,7 @@ func _pause_after_delay(delay: float) -> void:
 			GameManager.toggle_pause()
 	)
 
-func _draw_next_card() -> Resource:
+func _draw_next_card() -> CardData:
 	if draw_pile.is_empty():
 		draw_pile = deck.duplicate()
 		draw_pile.shuffle()

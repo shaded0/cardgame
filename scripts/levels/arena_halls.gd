@@ -1,4 +1,4 @@
-extends "res://scripts/levels/arena_base.gd"
+extends ArenaBase
 
 ## Long hallway with pillar rows forming corridors.
 

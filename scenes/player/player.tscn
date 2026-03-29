@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://bplayer001"]
+[gd_scene load_steps=15 format=3 uid="uid://bplayer001"]
 
 [ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/player_state_machine.gd" id="2_sm"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/combat/mana_component.gd" id="10_mana"]
 [ext_resource type="Script" path="res://scripts/cards/card_manager.gd" id="11_cards"]
 [ext_resource type="Script" path="res://scripts/cards/card_effect_resolver.gd" id="12_resolver"]
+[ext_resource type="Script" path="res://scripts/combat/buff_system.gd" id="13_buffs"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
 size = Vector2(40, 28)
@@ -56,6 +57,9 @@ script = ExtResource("9_health")
 
 [node name="ManaComponent" type="Node" parent="."]
 script = ExtResource("10_mana")
+
+[node name="BuffSystem" type="Node" parent="."]
+script = ExtResource("13_buffs")
 
 [node name="CardManager" type="Node" parent="."]
 script = ExtResource("11_cards")

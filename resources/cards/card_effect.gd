@@ -6,6 +6,7 @@ extends Resource
 
 enum EffectType { DAMAGE, HEAL, BUFF, AOE, PROJECTILE, SUMMON, MANA_GEN, SHIELD }
 enum TargetMode { NEAREST_ENEMY, CURSOR, SELF, ALL_ENEMIES, AREA_AT_CURSOR }
+enum BuffType { DAMAGE_UP, SPEED_UP, DEFENSE_UP, EMPOWER_NEXT, DODGE_BOOST }
 
 @export var type: EffectType = EffectType.DAMAGE
 @export var value: float = 10.0
@@ -13,3 +14,5 @@ enum TargetMode { NEAREST_ENEMY, CURSOR, SELF, ALL_ENEMIES, AREA_AT_CURSOR }
 @export var duration: float = 0.0
 @export var effect_scene: PackedScene
 @export var target_mode: TargetMode = TargetMode.NEAREST_ENEMY
+@export var buff_type: BuffType = BuffType.DAMAGE_UP
+@export var stacks: int = 1

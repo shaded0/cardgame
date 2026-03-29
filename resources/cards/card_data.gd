@@ -12,7 +12,7 @@ enum CardClass { NEUTRAL, SOLDIER, ROGUE, MAGE }
 @export var mana_cost: int = 10
 @export var cooldown: float = 0.0
 @export var card_icon: Texture2D
-@export var effects: Array[Resource] = []  # Array of CardEffect
-@export var chain_card: Resource  # CardData for mage chains
+@export var effects: Array[CardEffect] = []
+@export var chain_card: CardData
 @export var generates_mana: int = 0
 @export var pauses_game: bool = false  ## If true, playing this card pauses the game briefly

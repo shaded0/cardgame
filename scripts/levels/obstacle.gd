@@ -48,10 +48,10 @@ func setup(type: ObstacleType, pos: Vector2) -> void:
 	add_child(shape)
 	add_child(sprite)
 
-	# Also add an Area2D to block projectiles
+	# Area2D detector to block projectiles on contact.
 	var blocker := Area2D.new()
-	blocker.collision_layer = 1 | 2  # Present on these layers
-	blocker.collision_mask = 4 | 64  # Detect projectiles
+	blocker.collision_layer = 0  # Not a body — pure detector
+	blocker.collision_mask = 4 | 64  # Detect player and enemy projectiles
 	var blocker_shape := CollisionShape2D.new()
 	blocker_shape.shape = shape.shape.duplicate()
 	blocker.add_child(blocker_shape)

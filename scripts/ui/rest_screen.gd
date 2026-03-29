@@ -6,6 +6,7 @@ extends CanvasLayer
 signal rest_completed
 
 var _content_root: VBoxContainer
+var _bg: ColorRect = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -13,10 +14,10 @@ func _ready() -> void:
 	_build_ui()
 
 func _build_ui() -> void:
-	var bg := ColorRect.new()
-	bg.color = Color(0, 0, 0, 0.8)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	_bg = ColorRect.new()
+	_bg.color = Color(0, 0, 0, 0.0)
+	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_bg)
 
 	_content_root = VBoxContainer.new()
 	_content_root.set_anchors_preset(Control.PRESET_CENTER)
@@ -26,7 +27,18 @@ func _build_ui() -> void:
 	_content_root.add_theme_constant_override("separation", 20)
 	add_child(_content_root)
 
+	# Start hidden for entrance animation
+	_content_root.modulate.a = 0.0
+	_content_root.scale = Vector2(0.85, 0.85)
+	_content_root.pivot_offset = _content_root.size / 2.0
+
 	_show_choice_screen()
+
+	# Entrance animation
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_bg, "color:a", 0.8, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(_content_root, "modulate:a", 1.0, 0.3).set_ease(Tween.EASE_OUT)
+	tween.tween_property(_content_root, "scale", Vector2(1.0, 1.0), 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 
 func _show_choice_screen() -> void:
 	_clear_content()
@@ -51,6 +63,7 @@ func _show_choice_screen() -> void:
 	rest_btn.custom_minimum_size = Vector2(350, 60)
 	rest_btn.add_theme_font_size_override("font_size", 20)
 	rest_btn.pressed.connect(_on_rest)
+	_style_button(rest_btn)
 	_content_root.add_child(rest_btn)
 
 	# Upgrade button
@@ -64,6 +77,7 @@ func _show_choice_screen() -> void:
 	upgrade_btn.custom_minimum_size = Vector2(350, 60)
 	upgrade_btn.add_theme_font_size_override("font_size", 20)
 	upgrade_btn.pressed.connect(_show_upgrade_screen)
+	_style_button(upgrade_btn)
 	_content_root.add_child(upgrade_btn)
 
 	# Remove card button
@@ -77,6 +91,7 @@ func _show_choice_screen() -> void:
 	remove_btn.custom_minimum_size = Vector2(350, 60)
 	remove_btn.add_theme_font_size_override("font_size", 20)
 	remove_btn.pressed.connect(_show_remove_screen)
+	_style_button(remove_btn)
 	_content_root.add_child(remove_btn)
 
 func _show_upgrade_screen() -> void:
@@ -105,9 +120,12 @@ func _show_upgrade_screen() -> void:
 		if card.upgraded_version == null or card.is_upgraded:
 			continue
 
+		var row_panel := _create_hover_row()
+		list.add_child(row_panel)
+
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
-		list.add_child(row)
+		row_panel.add_child(row)
 
 		# Current card info
 		var current_label := Label.new()
@@ -138,6 +156,7 @@ func _show_upgrade_screen() -> void:
 		btn.text = "Upgrade"
 		btn.custom_minimum_size = Vector2(100, 30)
 		btn.add_theme_font_size_override("font_size", 14)
+		_style_button(btn)
 		var deck_index: int = i
 		btn.pressed.connect(func() -> void: _on_upgrade_card(deck_index))
 		row.add_child(btn)
@@ -147,6 +166,7 @@ func _show_upgrade_screen() -> void:
 	back_btn.text = "Back"
 	back_btn.custom_minimum_size = Vector2(120, 40)
 	back_btn.add_theme_font_size_override("font_size", 16)
+	_style_button(back_btn)
 	back_btn.pressed.connect(_show_choice_screen)
 	_content_root.add_child(back_btn)
 
@@ -180,9 +200,12 @@ func _show_remove_screen() -> void:
 	for i in range(GameManager.run_deck.size()):
 		var card: CardData = GameManager.run_deck[i]
 
+		var row_panel := _create_hover_row()
+		list.add_child(row_panel)
+
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 12)
-		list.add_child(row)
+		row_panel.add_child(row)
 
 		var card_label := Label.new()
 		card_label.text = "%s (%s)" % [card.card_name, card.get_cost_label()]
@@ -210,25 +233,27 @@ func _show_remove_screen() -> void:
 		btn.custom_minimum_size = Vector2(100, 30)
 		btn.add_theme_font_size_override("font_size", 14)
 		btn.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5))
+		_style_button(btn)
 		var deck_index: int = i
-		var row_ref: HBoxContainer = row
-		btn.pressed.connect(func() -> void: _on_remove_card(deck_index, row_ref))
+		var panel_ref: PanelContainer = row_panel
+		btn.pressed.connect(func() -> void: _on_remove_card(deck_index, panel_ref))
 		row.add_child(btn)
 
 	var back_btn := Button.new()
 	back_btn.text = "Back"
 	back_btn.custom_minimum_size = Vector2(120, 40)
 	back_btn.add_theme_font_size_override("font_size", 16)
+	_style_button(back_btn)
 	back_btn.pressed.connect(_show_choice_screen)
 	_content_root.add_child(back_btn)
 
-func _on_remove_card(deck_index: int, row: HBoxContainer) -> void:
+func _on_remove_card(deck_index: int, row_panel: PanelContainer) -> void:
 	if not GameManager.remove_card_from_deck(deck_index):
 		return
-	row.modulate = Color(1.5, 0.3, 0.2, 1.0)
-	var tween := row.create_tween().set_parallel(true)
-	tween.tween_property(row, "modulate:a", 0.0, 0.4)
-	tween.tween_property(row, "scale:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
+	row_panel.modulate = Color(1.5, 0.3, 0.2, 1.0)
+	var tween := row_panel.create_tween().set_parallel(true)
+	tween.tween_property(row_panel, "modulate:a", 0.0, 0.4)
+	tween.tween_property(row_panel, "scale:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.chain().tween_callback(_complete)
 
 func _on_rest() -> void:
@@ -243,7 +268,12 @@ func _on_upgrade_card(deck_index: int) -> void:
 
 func _complete() -> void:
 	rest_completed.emit()
-	queue_free()
+	# Exit animation
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(_bg, "color:a", 0.0, 0.2)
+	tween.tween_property(_content_root, "modulate:a", 0.0, 0.2)
+	tween.tween_property(_content_root, "scale", Vector2(0.9, 0.9), 0.2).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(queue_free)
 
 func _count_upgradeable_cards() -> int:
 	var count: int = 0
@@ -255,3 +285,67 @@ func _count_upgradeable_cards() -> int:
 func _clear_content() -> void:
 	for child in _content_root.get_children():
 		child.queue_free()
+
+func _style_button(btn: Button) -> void:
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.08, 0.08, 0.14, 0.9)
+	normal.border_color = Color(0.4, 0.3, 0.2, 0.6)
+	normal.set_border_width_all(2)
+	normal.set_corner_radius_all(8)
+	normal.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("normal", normal)
+
+	var hover := StyleBoxFlat.new()
+	hover.bg_color = Color(0.12, 0.1, 0.16, 0.95)
+	hover.border_color = Color(1.0, 0.5, 0.2, 0.8)
+	hover.set_border_width_all(3)
+	hover.set_corner_radius_all(8)
+	hover.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("hover", hover)
+
+	var pressed := StyleBoxFlat.new()
+	pressed.bg_color = Color(0.2, 0.12, 0.08, 0.95)
+	pressed.border_color = Color(1.0, 0.7, 0.3, 1.0)
+	pressed.set_border_width_all(3)
+	pressed.set_corner_radius_all(8)
+	pressed.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+	var focus := StyleBoxFlat.new()
+	focus.bg_color = Color(0.12, 0.1, 0.16, 0.95)
+	focus.border_color = Color(1.0, 0.5, 0.2, 0.8)
+	focus.set_border_width_all(3)
+	focus.set_corner_radius_all(8)
+	focus.set_content_margin_all(12)
+	btn.add_theme_stylebox_override("focus", focus)
+
+	btn.add_theme_color_override("font_color", Color(0.9, 0.85, 0.8, 1.0))
+	btn.add_theme_color_override("font_hover_color", Color(1.0, 0.8, 0.5, 1.0))
+	btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.9, 0.6, 1.0))
+	btn.add_theme_color_override("font_focus_color", Color(1.0, 0.8, 0.5, 1.0))
+
+	btn.mouse_entered.connect(func(): _pulse_button(btn))
+	btn.focus_entered.connect(func(): _pulse_button(btn))
+
+func _pulse_button(btn: Button) -> void:
+	btn.pivot_offset = btn.size / 2.0
+	var tween := create_tween()
+	tween.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.1).set_ease(Tween.EASE_OUT)
+	tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_IN)
+
+func _create_hover_row() -> PanelContainer:
+	var row_panel := PanelContainer.new()
+	var row_style := StyleBoxFlat.new()
+	row_style.bg_color = Color(1.0, 0.8, 0.2, 0.0)
+	row_style.set_corner_radius_all(4)
+	row_style.set_content_margin_all(4)
+	row_panel.add_theme_stylebox_override("panel", row_style)
+	row_panel.mouse_entered.connect(func():
+		var tw := row_panel.create_tween()
+		tw.tween_method(func(a: float): row_style.bg_color.a = a, row_style.bg_color.a, 0.08, 0.15)
+	)
+	row_panel.mouse_exited.connect(func():
+		var tw := row_panel.create_tween()
+		tw.tween_method(func(a: float): row_style.bg_color.a = a, row_style.bg_color.a, 0.0, 0.15)
+	)
+	return row_panel

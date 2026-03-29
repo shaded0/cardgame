@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/enemy_data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/enemies/behaviors/poison_trail_behavior.gd" id="2_poison"]
+
+[resource]
+script = ExtResource("1")
+enemy_name = "Plague Rat"
+enemy_type = "plague_rat"
+max_health = 15.0
+move_speed = 210.0
+attack_damage = 4.0
+attack_range = 45.0
+attack_cooldown = 0.8
+chase_range = 600.0
+behavior_scripts = [ExtResource("2_poison")]
+visual_scale = 0.7

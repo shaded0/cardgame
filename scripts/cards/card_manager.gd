@@ -24,6 +24,7 @@ var exhaust_pile: Array[CardData] = []
 var _tactical_focus_active: bool = false
 var _base_time_scale: float = 1.0  ## Track non-tactical time scale so hitstop/etc. can coexist
 var _cycle_cooldown_timer: float = 0.0
+var _mana_cost_modifier: float = 0.0  ## Temporary increase from Banshee scream etc.
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -150,7 +151,28 @@ func can_play_card(card: CardData, available_mana: float) -> bool:
 func _get_mana_to_spend(card: CardData, available_mana: float) -> float:
 	if card.is_x_cost:
 		return maxf(available_mana, 0.0)
-	return float(card.mana_cost) if available_mana >= card.mana_cost else 0.0
+	var effective_cost: float = maxf(float(card.mana_cost) + _mana_cost_modifier, 0.0)
+	return effective_cost if available_mana >= effective_cost else 0.0
+
+func apply_mana_cost_modifier(amount: float, duration: float) -> void:
+	## Temporarily increases all card mana costs. Used by Banshee scream.
+	_mana_cost_modifier += amount
+
+	# Show player feedback
+	var player = get_parent()
+	if player and is_instance_valid(player):
+		DamageNumber.spawn_text(player.get_parent(), player.global_position + Vector2(0, -40), "SILENCED!", Color(0.6, 0.2, 0.8))
+		hand_updated.emit(hand.duplicate())
+
+	if not is_inside_tree():
+		_mana_cost_modifier -= amount
+		return
+	var timer: SceneTreeTimer = get_tree().create_timer(duration)
+	timer.timeout.connect(func() -> void:
+		_mana_cost_modifier = maxf(_mana_cost_modifier - amount, 0.0)
+		if is_instance_valid(self):
+			hand_updated.emit(hand.duplicate())
+	)
 
 func try_cycle_card(slot_index: int) -> void:
 	if _cycle_cooldown_timer > 0.0:

@@ -8,6 +8,10 @@ extends Control
 @onready var card_details: VBoxContainer = $Panel/VBoxContainer/CardDetails
 @onready var resume_btn: Button = $Panel/VBoxContainer/ResumeButton
 @onready var quit_btn: Button = $Panel/VBoxContainer/QuitButton
+@onready var overlay: ColorRect = $Overlay
+@onready var panel: PanelContainer = $Panel
+
+var _close_tween: Tween = null
 
 func _ready() -> void:
 	# While paused, regular physics still stops but this UI remains active.
@@ -18,19 +22,97 @@ func _ready() -> void:
 	resume_btn.pressed.connect(_on_resume)
 	quit_btn.pressed.connect(_on_quit)
 
+	# Style the panel and buttons
+	_style_panel()
+	_style_buttons()
+
 	# React to global pause events emitted by GameManager.
 	GameManager.game_paused.connect(_on_game_paused)
 	GameManager.game_resumed.connect(_on_game_resumed)
 
 func _on_game_paused() -> void:
-	# Build the card list each time pause opens because hand can change.
+	if _close_tween and _close_tween.is_valid():
+		_close_tween.kill()
+
 	visible = true
 	_populate_card_details()
-	resume_btn.grab_focus()
+
+	# Animate open: overlay fades, panel scales in
+	overlay.modulate.a = 0.0
+	panel.modulate.a = 0.0
+	panel.scale = Vector2(0.85, 0.85)
+	panel.pivot_offset = panel.size / 2.0
+
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(overlay, "modulate:a", 1.0, 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(panel, "modulate:a", 1.0, 0.25).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(panel, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.chain().tween_callback(func(): resume_btn.grab_focus())
 
 func _on_game_resumed() -> void:
-	# Hide only; HUD will stay updated by its own manager signals.
-	visible = false
+	# Animate close: shrink and fade out
+	_close_tween = create_tween().set_parallel(true)
+	_close_tween.tween_property(overlay, "modulate:a", 0.0, 0.15)
+	_close_tween.tween_property(panel, "scale", Vector2(0.9, 0.9), 0.15).set_ease(Tween.EASE_IN)
+	_close_tween.tween_property(panel, "modulate:a", 0.0, 0.15)
+	_close_tween.chain().tween_callback(func(): visible = false)
+
+func _style_panel() -> void:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.06, 0.1, 0.95)
+	style.border_color = Color(0.4, 0.3, 0.2, 0.5)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(10)
+	style.set_content_margin_all(16)
+	panel.add_theme_stylebox_override("panel", style)
+
+func _style_buttons() -> void:
+	for btn in [resume_btn, quit_btn]:
+		var normal := StyleBoxFlat.new()
+		normal.bg_color = Color(0.08, 0.08, 0.14, 0.9)
+		normal.border_color = Color(0.4, 0.3, 0.2, 0.6)
+		normal.set_border_width_all(2)
+		normal.set_corner_radius_all(8)
+		normal.set_content_margin_all(12)
+		btn.add_theme_stylebox_override("normal", normal)
+
+		var hover := StyleBoxFlat.new()
+		hover.bg_color = Color(0.12, 0.1, 0.16, 0.95)
+		hover.border_color = Color(1.0, 0.5, 0.2, 0.8)
+		hover.set_border_width_all(3)
+		hover.set_corner_radius_all(8)
+		hover.set_content_margin_all(12)
+		btn.add_theme_stylebox_override("hover", hover)
+
+		var pressed := StyleBoxFlat.new()
+		pressed.bg_color = Color(0.2, 0.12, 0.08, 0.95)
+		pressed.border_color = Color(1.0, 0.7, 0.3, 1.0)
+		pressed.set_border_width_all(3)
+		pressed.set_corner_radius_all(8)
+		pressed.set_content_margin_all(12)
+		btn.add_theme_stylebox_override("pressed", pressed)
+
+		var focus := StyleBoxFlat.new()
+		focus.bg_color = Color(0.12, 0.1, 0.16, 0.95)
+		focus.border_color = Color(1.0, 0.5, 0.2, 0.8)
+		focus.set_border_width_all(3)
+		focus.set_corner_radius_all(8)
+		focus.set_content_margin_all(12)
+		btn.add_theme_stylebox_override("focus", focus)
+
+		btn.add_theme_color_override("font_color", Color(0.9, 0.85, 0.8, 1.0))
+		btn.add_theme_color_override("font_hover_color", Color(1.0, 0.8, 0.5, 1.0))
+		btn.add_theme_color_override("font_pressed_color", Color(1.0, 0.9, 0.6, 1.0))
+		btn.add_theme_color_override("font_focus_color", Color(1.0, 0.8, 0.5, 1.0))
+
+		btn.mouse_entered.connect(func(): _pulse_button(btn))
+		btn.focus_entered.connect(func(): _pulse_button(btn))
+
+func _pulse_button(btn: Button) -> void:
+	btn.pivot_offset = btn.size / 2.0
+	var tween := create_tween()
+	tween.tween_property(btn, "scale", Vector2(1.05, 1.05), 0.1).set_ease(Tween.EASE_OUT)
+	tween.tween_property(btn, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_IN)
 
 func _populate_card_details() -> void:
 	# Clear old rows so each pause state is freshly rendered.

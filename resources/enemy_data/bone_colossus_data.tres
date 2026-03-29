@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/enemy_data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/enemies/behaviors/bone_storm_behavior.gd" id="2_storm"]
+[ext_resource type="Script" path="res://scripts/enemies/behaviors/resurrect_behavior.gd" id="3_resurrect"]
+
+[resource]
+script = ExtResource("1")
+enemy_name = "Bone Colossus"
+enemy_type = "bone_colossus"
+max_health = 180.0
+move_speed = 75.0
+attack_damage = 16.0
+attack_range = 100.0
+attack_cooldown = 1.5
+chase_range = 1200.0
+behavior_scripts = [ExtResource("2_storm"), ExtResource("3_resurrect")]
+visual_scale = 1.5

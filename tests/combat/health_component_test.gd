@@ -37,3 +37,37 @@ func test_take_damage_clamps_to_zero_and_emits_died() -> void:
 	assert_eq(updates.size(), 1, "Damage should emit one health_changed event.")
 	assert_eq(updates[0][0], 0.0, "The emitted health value should be clamped to zero.")
 	assert_eq(died_count, 1, "Crossing zero health should emit died exactly once.")
+
+func test_health_changed_reports_hp_not_effective_health_when_shielded() -> void:
+	var player := Factory.make_player(root, false)
+	var health = Factory.add_health(player, 100.0, 60.0)
+
+	var updates: Array[Array] = []
+	health.health_changed.connect(func(current: float, maximum: float) -> void:
+		updates.append([current, maximum])
+	)
+
+	health.add_shield(25.0)
+
+	assert_eq(health.current_health, 60.0, "Adding shield should not change current HP.")
+	assert_eq(health.shield_health, 25.0, "Shield should be tracked separately from HP.")
+	assert_eq(updates.size(), 1, "Adding shield should still notify listeners once.")
+	assert_eq(updates[0][0], 60.0, "Health listeners should receive actual HP, not HP plus shield.")
+	assert_eq(updates[0][1], 100.0, "Health listeners should receive base max HP, not shield-augmented max.")
+	assert_eq(health.get_effective_health(), 85.0, "Effective health should still include active shield.")
+	assert_eq(health.get_effective_max_health(), 125.0, "Effective max health should include active shield.")
+
+func test_repeated_overkill_emits_died_only_once() -> void:
+	var player := Factory.make_player(root, false)
+	var health = Factory.add_health(player, 30.0, 10.0)
+
+	var died_count := 0
+	health.died.connect(func() -> void:
+		died_count += 1
+	)
+
+	health.take_damage(15.0)
+	health.take_damage(999.0)
+
+	assert_eq(health.current_health, 0.0, "Overkill should still clamp HP to zero.")
+	assert_eq(died_count, 1, "Death should only emit once even if more damage arrives after HP hits zero.")

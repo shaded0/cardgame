@@ -120,12 +120,47 @@ func _get_first_node_in_group(group_name: StringName) -> Node:
 		return null
 	return nodes[0]
 
+var _transitioning: bool = false
+
 func _change_scene(path: String) -> void:
 	var tree := get_tree()
 	if tree.paused:
 		tree.paused = false
 		game_resumed.emit()
+
+	if _transitioning:
+		tree.change_scene_to_file(path)
+		return
+
+	_transitioning = true
+
+	# Fade to black, switch scene, then fade in
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.color = Color(0, 0, 0, 0)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(rect)
+
+	var fade_out := create_tween()
+	fade_out.tween_property(rect, "color:a", 1.0, 0.2).set_ease(Tween.EASE_IN)
+	await fade_out.finished
+
 	tree.change_scene_to_file(path)
+
+	# Wait a frame for new scene to load
+	await tree.process_frame
+
+	var fade_in := create_tween()
+	fade_in.tween_property(rect, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT)
+	await fade_in.finished
+
+	layer.queue_free()
+	_transitioning = false
 
 func log_attack(source: String, event: String, details: Dictionary = {}) -> void:
 	if not debug_attack_logging or not OS.is_debug_build():

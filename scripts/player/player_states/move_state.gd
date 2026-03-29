@@ -7,7 +7,7 @@ var _was_moving: bool = false
 var _prev_dir: Vector2 = Vector2.ZERO
 
 func enter() -> void:
-	player.play_anim(&"walk")
+	_update_move_animation(1.0)
 	_was_moving = player.velocity.length() > 10.0
 	_prev_dir = player.velocity.normalized()
 	# Subtle stretch on movement start + dust kick
@@ -24,12 +24,20 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("dodge")
 		return
 
-	var iso_dir: Vector2 = player.get_iso_input()
-	if iso_dir == Vector2.ZERO:
+	if not player.has_move_intent():
 		state_machine.transition_to("idle")
 		return
 
-	var target_velocity: Vector2 = iso_dir * player.move_speed
+	var iso_dir: Vector2 = player.get_move_direction()
+	var input_strength: float = player.get_move_input_strength()
+	if input_strength <= 0.0:
+		# Briefly coast through tiny release gaps so movement doesn't chatter between move/idle.
+		player.velocity = player.velocity.move_toward(Vector2.ZERO, player.deceleration * delta * 0.65)
+		player.move_and_slide()
+		return
+
+	_update_move_animation(input_strength)
+	var target_velocity: Vector2 = iso_dir * player.move_speed * input_strength
 
 	# Determine effective acceleration — use higher decel when turning against current velocity
 	var accel: float = player.acceleration
@@ -62,3 +70,6 @@ func _squash_stretch(target_scale: Vector2, duration: float) -> void:
 	var tween := player.create_tween()
 	tween.tween_property(player.anim_sprite, "scale", target_scale, duration * 0.4)
 	tween.tween_property(player.anim_sprite, "scale", Vector2(1.0, 1.0), duration * 0.6).set_ease(Tween.EASE_OUT)
+
+func _update_move_animation(input_strength: float) -> void:
+	player.play_anim(&"run" if input_strength >= 0.85 else &"walk")

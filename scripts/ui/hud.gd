@@ -63,6 +63,8 @@ func _connect_to_player() -> void:
 	if card_mgr.hand.size() > 0:
 		_on_hand_updated(card_mgr.hand)
 
+	_animate_entrance()
+
 func _find_player() -> PlayerController:
 	var player: PlayerController = GameManager.get_player()
 	if player:
@@ -71,13 +73,42 @@ func _find_player() -> PlayerController:
 	var arena: Node = get_parent().get_parent()
 	return arena.find_child("Player", true, false) as PlayerController
 
+func _animate_entrance() -> void:
+	# Health bar slides in from left
+	var hb_target_x := health_bar.position.x
+	health_bar.position.x = -health_bar.size.x
+	health_bar.modulate.a = 0.0
+	var hb_tween := health_bar.create_tween().set_parallel(true)
+	hb_tween.tween_property(health_bar, "position:x", hb_target_x, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	hb_tween.tween_property(health_bar, "modulate:a", 1.0, 0.3)
+
+	# Mana bar slides in from left with slight delay
+	var mb_target_x := mana_bar.position.x
+	mana_bar.position.x = -mana_bar.size.x
+	mana_bar.modulate.a = 0.0
+	var mb_tween := mana_bar.create_tween().set_parallel(true)
+	mb_tween.tween_property(mana_bar, "position:x", mb_target_x, 0.4).set_delay(0.1).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	mb_tween.tween_property(mana_bar, "modulate:a", 1.0, 0.3).set_delay(0.1)
+
+	# Draw counter fades in with mana bar
+	if draw_counter_label:
+		draw_counter_label.modulate.a = 0.0
+		var dc_tween := draw_counter_label.create_tween()
+		dc_tween.tween_property(draw_counter_label, "modulate:a", 1.0, 0.3).set_delay(0.15)
+
+	# Card hand rises from bottom
+	var ch_target_y := card_hand.position.y
+	card_hand.position.y += 80.0
+	card_hand.modulate.a = 0.0
+	var ch_tween := card_hand.create_tween().set_parallel(true)
+	ch_tween.tween_property(card_hand, "position:y", ch_target_y, 0.5).set_delay(0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	ch_tween.tween_property(card_hand, "modulate:a", 1.0, 0.35).set_delay(0.2)
+
 func _on_health_changed(current: float, maximum: float) -> void:
-	health_bar.max_value = maximum
-	health_bar.value = current
+	health_bar.set_health(current, maximum)
 
 func _on_mana_changed(current: float, maximum: float) -> void:
-	mana_bar.max_value = maximum
-	mana_bar.value = current
+	mana_bar.set_mana(current, maximum)
 	_update_card_playability()
 
 func _on_hand_updated(hand: Array) -> void:
@@ -119,6 +150,11 @@ func _on_card_cycled(_old_card: CardData, _new_card: CardData, slot_index: int) 
 		card_slots[slot_index].play_cycle_animation()
 
 func _on_card_played_synergy(_card: CardData, played_slot: int, _mana_spent: float) -> void:
+	# Immediate visual feedback on the played slot
+	if played_slot >= 0 and played_slot < card_slots.size():
+		if card_slots[played_slot].has_method("play_used_feedback"):
+			card_slots[played_slot].play_used_feedback()
+
 	var player := _find_player()
 	if player == null:
 		return

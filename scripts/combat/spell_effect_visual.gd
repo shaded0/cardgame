@@ -4,6 +4,36 @@ extends Node2D
 ## Visual flash/burst for card spell effects.
 ## Enhanced with particles, trails, and screen effects for maximum juice.
 
+## Cached light gradient texture shared by all transient lights.
+static var _light_texture: Texture2D = null
+
+static func _get_light_texture() -> Texture2D:
+	if _light_texture:
+		return _light_texture
+	var size: int = 64
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(size / 2.0, size / 2.0)
+	for x in range(size):
+		for y in range(size):
+			var dist: float = Vector2(x, y).distance_to(center) / (size / 2.0)
+			var alpha: float = clampf(1.0 - dist * dist, 0.0, 1.0)
+			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
+	_light_texture = ImageTexture.create_from_image(image)
+	return _light_texture
+
+static func _attach_transient_light(node: Node2D, color: Color, energy: float = 0.8, scale: float = 1.5, duration: float = 0.3) -> void:
+	## Add a brief PointLight2D that fades out and self-destructs.
+	var light := PointLight2D.new()
+	light.texture = _get_light_texture()
+	light.color = color
+	light.energy = energy
+	light.texture_scale = scale
+	light.shadow_enabled = false
+	node.add_child(light)
+	var tween := light.create_tween()
+	tween.tween_property(light, "energy", 0.0, duration).set_ease(Tween.EASE_IN)
+	tween.tween_callback(light.queue_free)
+
 static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color, duration: float = 0.3) -> void:
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos
@@ -29,6 +59,9 @@ static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color,
 	tween.tween_property(core, "scale", Vector2(1.5, 1.5), duration * 0.6).set_ease(Tween.EASE_OUT)
 	tween.tween_property(core, "modulate:a", 0.0, duration * 0.6)
 	tween.chain().tween_callback(effect.queue_free)
+
+	# Transient light for the burst
+	_attach_transient_light(effect, color.lightened(0.3), 1.0, 2.0, duration)
 
 	# Spawn sparks around the burst
 	ScreenFX.spawn_hit_sparks(parent, pos, 8, color.lightened(0.3))
@@ -100,6 +133,9 @@ static func spawn_heal(parent: Node, pos: Vector2) -> void:
 		effect.add_child(sparkle)
 
 	parent.add_child(effect)
+
+	# Green heal glow
+	_attach_transient_light(effect, Color(0.3, 1.0, 0.3), 0.8, 1.5, 0.6)
 
 	var tween: Tween = effect.create_tween()
 	tween.set_parallel(true)
@@ -198,6 +234,9 @@ static func spawn_fire_explosion(parent: Node, pos: Vector2, radius: float = 30.
 	tween.tween_property(mid, "modulate:a", 0.0, 0.4)
 	tween.tween_property(core, "modulate:a", 0.0, 0.3)
 	tween.chain().tween_callback(effect.queue_free)
+
+	# Bright fire light
+	_attach_transient_light(effect, Color(1.0, 0.5, 0.1), 1.5, 3.0, 0.5)
 
 	# Lots of sparks + ground cracks
 	ScreenFX.spawn_hit_sparks(parent, pos, 12, Color(1.0, 0.6, 0.2))

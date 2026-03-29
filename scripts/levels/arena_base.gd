@@ -23,6 +23,8 @@ var room_clear_enabled: bool = true
 @onready var entity_layer: Node2D = $EntityLayer
 
 var _vignette_shader: Shader = preload("res://shaders/vignette.gdshader")
+var _low_health_shader: Shader = preload("res://shaders/low_health.gdshader")
+var _low_health_material: ShaderMaterial = null
 
 ## Room-type color tints for ambient lighting variation.
 var _ambient_tint: Color = Color(0.55, 0.5, 0.65)
@@ -34,6 +36,7 @@ func _ready() -> void:
 	_configure_from_current_room()
 	_setup_vignette()
 	_setup_lighting()
+	_setup_low_health_overlay()
 	_spawn_ambient_particles()
 	_spawn_floor_decals()
 
@@ -62,9 +65,9 @@ func _draw() -> void:
 			var is_light: bool = (ix + iy) % 2 == 0
 			var floor_color: Color
 			if is_light:
-				floor_color = Color(0.14, 0.16, 0.22, 1.0)
+				floor_color = Color(0.14 * _floor_hue_shift.r, 0.16 * _floor_hue_shift.g, 0.22 * _floor_hue_shift.b, 1.0)
 			else:
-				floor_color = Color(0.11, 0.13, 0.18, 1.0)
+				floor_color = Color(0.11 * _floor_hue_shift.r, 0.13 * _floor_hue_shift.g, 0.18 * _floor_hue_shift.b, 1.0)
 
 			# Per-tile color variation for organic look
 			var tile_hash: float = fmod(absf(sin(float(ix * 73 + iy * 137))), 1.0)
@@ -278,6 +281,32 @@ func _setup_vignette() -> void:
 	rect.material = mat
 	layer.add_child(rect)
 
+func _setup_low_health_overlay() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 6
+	add_child(layer)
+
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_low_health_material = ShaderMaterial.new()
+	_low_health_material.shader = _low_health_shader
+	_low_health_material.set_shader_parameter("health_ratio", 1.0)
+	rect.material = _low_health_material
+	layer.add_child(rect)
+
+	# Connect to player health updates after the player is ready
+	await get_tree().process_frame
+	var player: PlayerController = GameManager.get_player()
+	if player and player.has_node("HealthComponent"):
+		var health: HealthComponent = player.get_node("HealthComponent")
+		health.health_changed.connect(_on_player_health_changed)
+		_on_player_health_changed(health.current_health, health.max_health)
+
+func _on_player_health_changed(current: float, maximum: float) -> void:
+	if _low_health_material:
+		_low_health_material.set_shader_parameter("health_ratio", current / maxf(maximum, 1.0))
+
 ## Override in subclasses to place obstacles
 func _place_obstacles() -> void:
 	pass
@@ -360,3 +389,116 @@ func _get_spawn_offset(min_radius: float, max_radius: float) -> Vector2:
 	var angle: float = randf() * TAU
 	var radius: float = randf_range(min_radius, max_radius)
 	return Vector2(cos(angle), sin(angle) * 0.5) * radius
+
+func _pick_room_palette() -> void:
+	## Set ambient tint and floor hue based on current room type.
+	if GameManager.current_room == null:
+		return
+	match GameManager.current_room.room_type:
+		RoomData.RoomType.COMBAT:
+			_ambient_tint = Color(0.55, 0.5, 0.65)
+			_floor_hue_shift = Color(1.0, 1.0, 1.0)
+		RoomData.RoomType.ELITE:
+			_ambient_tint = Color(0.6, 0.45, 0.45)
+			_floor_hue_shift = Color(1.1, 0.9, 0.85)
+		RoomData.RoomType.BOSS:
+			_ambient_tint = Color(0.55, 0.35, 0.35)
+			_floor_hue_shift = Color(1.2, 0.8, 0.75)
+		_:
+			_ambient_tint = Color(0.55, 0.5, 0.65)
+			_floor_hue_shift = Color(1.0, 1.0, 1.0)
+
+func _setup_lighting() -> void:
+	## Add CanvasModulate for ambient tint and a PointLight2D on the player.
+	var canvas_mod := CanvasModulate.new()
+	canvas_mod.color = _ambient_tint
+	add_child(canvas_mod)
+
+	# Player torch light — attached after a frame so the player node is ready.
+	await get_tree().process_frame
+	var player: PlayerController = GameManager.get_player()
+	if player:
+		var light := PointLight2D.new()
+		light.texture = _create_light_texture()
+		light.color = Color(1.0, 0.9, 0.7)
+		light.energy = 1.2
+		light.texture_scale = 3.5
+		light.shadow_enabled = false
+		light.name = "PlayerLight"
+		player.add_child(light)
+
+func _create_light_texture() -> Texture2D:
+	## Generate a soft radial gradient texture for PointLight2D.
+	var size: int = 128
+	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(size / 2.0, size / 2.0)
+	for x in range(size):
+		for y in range(size):
+			var dist: float = Vector2(x, y).distance_to(center) / (size / 2.0)
+			var alpha: float = clampf(1.0 - dist * dist, 0.0, 1.0)
+			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
+	return ImageTexture.create_from_image(image)
+
+func _spawn_floor_decals() -> void:
+	## Scatter semi-transparent floor details for visual richness.
+	var decal_layer := Node2D.new()
+	decal_layer.z_index = -2
+	decal_layer.name = "FloorDecals"
+	add_child(decal_layer)
+
+	var max_dist: float = arena_radius * 0.8
+	for i in range(12):
+		var angle: float = randf() * TAU
+		var dist: float = randf_range(40.0, max_dist)
+		var pos := Vector2(cos(angle) * dist, sin(angle) * 0.5 * dist)
+
+		var decal := Sprite2D.new()
+		# Randomly pick between crack lines and scorch marks
+		if randf() < 0.5:
+			decal.texture = _make_crack_decal()
+		else:
+			decal.texture = _make_scorch_decal()
+		decal.position = pos
+		decal.rotation = randf() * TAU
+		decal.modulate.a = randf_range(0.08, 0.2)
+		decal.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		decal_layer.add_child(decal)
+
+func _make_crack_decal() -> ImageTexture:
+	var size: int = 32
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var cx: float = size / 2.0
+	var cy: float = size / 2.0
+	# Draw 2-3 jagged crack lines from center
+	for _line_idx in range(randi_range(2, 3)):
+		var angle: float = randf() * TAU
+		var steps: int = randi_range(4, 7)
+		var px: float = cx
+		var py: float = cy
+		for _s in range(steps):
+			angle += randf_range(-0.6, 0.6)
+			var step_len: float = randf_range(2.0, 5.0)
+			var nx: float = px + cos(angle) * step_len
+			var ny: float = py + sin(angle) * step_len
+			# Bresenham-lite: just plot points along the line
+			for t in range(int(step_len) + 1):
+				var lx: int = clampi(int(lerpf(px, nx, float(t) / maxf(step_len, 1.0))), 0, size - 1)
+				var ly: int = clampi(int(lerpf(py, ny, float(t) / maxf(step_len, 1.0))), 0, size - 1)
+				img.set_pixel(lx, ly, Color(0.2, 0.18, 0.15, 0.8))
+			px = nx
+			py = ny
+	return ImageTexture.create_from_image(img)
+
+func _make_scorch_decal() -> ImageTexture:
+	var size: int = 24
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var center := Vector2(size / 2.0, size / 2.0)
+	var radius: float = size / 2.0
+	for x in range(size):
+		for y in range(size):
+			var dist: float = Vector2(x, y).distance_to(center)
+			if dist < radius:
+				var t: float = dist / radius
+				var alpha: float = (1.0 - t * t) * 0.6
+				img.set_pixel(x, y, Color(0.08, 0.06, 0.04, alpha))
+	return ImageTexture.create_from_image(img)

@@ -23,6 +23,8 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	# Keep all movement + animation updates in physics step for deterministic movement.
+	if player != null:
+		player.update_movement_input(delta)
 	if Input.is_action_just_pressed("basic_attack"):
 		buffer_attack_input()
 	if Input.is_action_just_pressed("dodge"):
@@ -66,7 +68,7 @@ func recover_to_neutral() -> void:
 		transition_to("attack")
 	elif player_node.can_dodge and consume_dodge_buffer():
 		transition_to("dodge")
-	elif player_node.get_iso_input() != Vector2.ZERO:
+	elif player_node.has_move_intent():
 		transition_to("move")
 	else:
 		transition_to("idle")

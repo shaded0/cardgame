@@ -1,8 +1,15 @@
 extends ProgressBar
 
-## Stylized health bar with animated molten gradient and damage flash.
+## Stylized health bar with animated molten gradient, damage flash,
+## smooth value interpolation, and low-health warning pulse.
 
 var _flash_tween: Tween = null
+var _interp_tween: Tween = null
+var _ghost_tween: Tween = null
+var _low_health_tween: Tween = null
+var _is_low_health: bool = false
+var _prev_value: float = -1.0
+var _ghost_bar: ProgressBar = null
 
 func _ready() -> void:
 	# Main fill - red gradient with inner glow via shader
@@ -37,20 +44,84 @@ func _ready() -> void:
 	bg_style.set_border_width_all(1)
 	add_theme_stylebox_override("background", bg_style)
 
-	# Connect to value changes for damage flash
-	value_changed.connect(_on_value_changed)
+	# Ghost bar — shows previous health, trails behind actual value
+	_ghost_bar = ProgressBar.new()
+	_ghost_bar.show_percentage = false
+	_ghost_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_ghost_bar.max_value = max_value
+	_ghost_bar.value = max_value
+	var ghost_fill := StyleBoxFlat.new()
+	ghost_fill.bg_color = Color(1.0, 0.85, 0.7, 0.35)
+	ghost_fill.corner_radius_top_left = 3
+	ghost_fill.corner_radius_top_right = 3
+	ghost_fill.corner_radius_bottom_right = 3
+	ghost_fill.corner_radius_bottom_left = 3
+	_ghost_bar.add_theme_stylebox_override("fill", ghost_fill)
+	var ghost_bg := StyleBoxEmpty.new()
+	_ghost_bar.add_theme_stylebox_override("background", ghost_bg)
+	# Insert behind main fill
+	add_child(_ghost_bar)
+	move_child(_ghost_bar, 0)
 
-var _prev_value: float = -1.0
-
-func _on_value_changed(new_value: float) -> void:
-	if _prev_value > 0.0 and new_value < _prev_value:
+func set_health(current: float, maximum: float) -> void:
+	max_value = maximum
+	if _ghost_bar:
+		_ghost_bar.max_value = maximum
+	if _prev_value > 0.0 and current < _prev_value:
 		_flash_damage()
-	_prev_value = new_value
+		# Ghost bar trails behind — delay then catch up slowly
+		if _ghost_bar:
+			if _ghost_tween and _ghost_tween.is_valid():
+				_ghost_tween.kill()
+			_ghost_tween = create_tween()
+			_ghost_tween.tween_interval(0.4)
+			_ghost_tween.tween_property(_ghost_bar, "value", current, 0.6).set_ease(Tween.EASE_IN_OUT)
+	elif _ghost_bar:
+		# Healing — ghost follows immediately
+		_ghost_bar.value = current
+	_prev_value = current
+	_check_low_health(current)
+
+	if _interp_tween and _interp_tween.is_valid():
+		_interp_tween.kill()
+	_interp_tween = create_tween()
+	_interp_tween.tween_property(self, "value", current, 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+
+func _check_low_health(current: float) -> void:
+	var threshold := max_value * 0.25
+	if current <= threshold and current > 0.0:
+		if not _is_low_health:
+			_is_low_health = true
+			_start_low_health_pulse()
+	else:
+		if _is_low_health:
+			_is_low_health = false
+			_stop_low_health_pulse()
+
+func _start_low_health_pulse() -> void:
+	if _low_health_tween and _low_health_tween.is_valid():
+		_low_health_tween.kill()
+	_low_health_tween = create_tween().set_loops()
+	_low_health_tween.tween_property(self, "modulate", Color(1.4, 0.6, 0.6, 1.0), 0.4).set_ease(Tween.EASE_IN_OUT)
+	_low_health_tween.tween_property(self, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.4).set_ease(Tween.EASE_IN_OUT)
+
+func _stop_low_health_pulse() -> void:
+	if _low_health_tween and _low_health_tween.is_valid():
+		_low_health_tween.kill()
+		_low_health_tween = null
+	modulate = Color(1, 1, 1, 1)
 
 func _flash_damage() -> void:
-	# Quick red flash when taking damage
+	# Kill pulse during flash to avoid modulate conflicts
+	if _low_health_tween and _low_health_tween.is_valid():
+		_low_health_tween.kill()
+
 	if _flash_tween and _flash_tween.is_valid():
 		_flash_tween.kill()
 	modulate = Color(2.0, 0.5, 0.5, 1.0)
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(self, "modulate", Color(1, 1, 1, 1), 0.3)
+	_flash_tween.finished.connect(func():
+		if _is_low_health:
+			_start_low_health_pulse()
+	, CONNECT_ONE_SHOT)

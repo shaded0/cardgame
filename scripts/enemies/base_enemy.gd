@@ -93,11 +93,34 @@ func _setup_sprite() -> void:
 		"golem_boss":
 			anim_sprite.sprite_frames = SpriteAnimator.create_golem_frames()
 			anim_sprite.offset = Vector2(0, -28)
+		"plague_rat":
+			anim_sprite.sprite_frames = SpriteAnimator.create_rat_frames()
+			anim_sprite.offset = Vector2(0, -14)
+		"mushroom_shaman":
+			anim_sprite.sprite_frames = SpriteAnimator.create_shaman_frames()
+			anim_sprite.offset = Vector2(0, -20)
+		"iron_beetle":
+			anim_sprite.sprite_frames = SpriteAnimator.create_beetle_frames()
+			anim_sprite.offset = Vector2(0, -16)
+		"banshee":
+			anim_sprite.sprite_frames = SpriteAnimator.create_banshee_frames()
+			anim_sprite.offset = Vector2(0, -26)
+			modulate.a = 0.7
+		"bone_colossus":
+			anim_sprite.sprite_frames = SpriteAnimator.create_colossus_frames()
+			anim_sprite.offset = Vector2(0, -28)
 		_:
 			anim_sprite.sprite_frames = SpriteAnimator.create_slime_frames(Color(0.4, 0.8, 0.3, 1.0))
 			anim_sprite.offset = Vector2(0, -18)
 
 	anim_sprite.play(&"idle")
+
+	# Apply outline shader for readability
+	var outline_shader: Shader = load("res://shaders/sprite_outline.gdshader")
+	if outline_shader:
+		var mat := ShaderMaterial.new()
+		mat.shader = outline_shader
+		anim_sprite.material = mat
 
 func set_aggro_delay(delay: float) -> void:
 	## Stagger when this enemy starts chasing so the player isn't swarmed instantly.
@@ -324,7 +347,7 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 
 func _restore_modulate() -> void:
 	## Reset modulate, respecting wraith transparency.
-	if enemy_data and enemy_data.enemy_type == "shadow_wraith":
+	if enemy_data and enemy_data.enemy_type in ["shadow_wraith", "banshee"]:
 		modulate = Color(1, 1, 1, 0.7)
 	else:
 		modulate = Color(1, 1, 1, 1)

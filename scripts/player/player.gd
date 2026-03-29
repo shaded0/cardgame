@@ -12,9 +12,11 @@ const DODGE_AFTERIMAGE_FX_TAG := "dodge_afterimage"
 @export var attack_damage: float = 20.0
 
 ## Movement feel tuning — acceleration uses curved ramp for snappy-but-weighty feel.
-@export var acceleration: float = 1700.0  ## Units/s² toward max speed
-@export var deceleration: float = 2200.0  ## Units/s² when releasing input (tighter than accel)
-@export var turn_decel_multiplier: float = 1.6  ## Extra decel when reversing direction
+@export var acceleration: float = 2600.0  ## Units/s² toward max speed
+@export var deceleration: float = 3600.0  ## Units/s² when releasing input (tighter than accel)
+@export var turn_decel_multiplier: float = 1.85  ## Extra decel when reversing direction
+@export var move_input_deadzone: float = 0.12
+@export var move_intent_grace: float = 0.08
 
 ## Base stats stored so buffs can add/remove from a known baseline.
 var base_move_speed: float = 420.0
@@ -28,6 +30,11 @@ var attack_visual: Sprite2D = null
 var current_anim: StringName = &"idle"
 var _attack_active: bool = false
 var _attack_elapsed: float = 0.0
+var _move_input: Vector2 = Vector2.ZERO
+var _last_move_direction: Vector2 = Vector2(1, 0.5).normalized()
+var _move_intent_remaining: float = 0.0
+var _movement_input_override_active: bool = false
+var _movement_input_override: Vector2 = Vector2.ZERO
 
 ## Core player node with components:
 ## - hitbox/hurtbox (combat)
@@ -48,6 +55,7 @@ var _attack_elapsed: float = 0.0
 
 func _ready() -> void:
 	_refresh_combat_refs()
+	update_movement_input(0.0)
 	# Start with disabled melee hitbox; each attack enables it on demand.
 	hitbox_shape.disabled = true
 
@@ -143,6 +151,13 @@ func _setup_animated_sprite() -> void:
 	anim_sprite.offset = Vector2(0, -24)
 	anim_sprite.play(&"idle")
 
+	# Apply outline shader for readability against dark floors
+	var outline_shader: Shader = load("res://shaders/sprite_outline.gdshader")
+	if outline_shader:
+		var mat := ShaderMaterial.new()
+		mat.shader = outline_shader
+		anim_sprite.material = mat
+
 func _process(_delta: float) -> void:
 	# Always face toward the mouse cursor
 	var mouse_pos: Vector2 = get_global_mouse_position()
@@ -202,14 +217,51 @@ func apply_class_config(config: ClassConfig) -> void:
 		card_manager.initialize_deck(config.card_pool)
 
 func get_iso_input() -> Vector2:
-	var raw: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	if raw.length() < 0.1:
+	return _move_input
+
+func has_move_intent() -> bool:
+	return _move_input != Vector2.ZERO or _move_intent_remaining > 0.0
+
+func get_move_direction() -> Vector2:
+	if _move_input != Vector2.ZERO:
+		return _move_input.normalized()
+	return _last_move_direction
+
+func get_move_input_strength() -> float:
+	return _move_input.length()
+
+func get_last_move_direction() -> Vector2:
+	return _last_move_direction
+
+func update_movement_input(delta: float) -> void:
+	var raw_input := _movement_input_override if _movement_input_override_active else Input.get_vector(
+		"move_left", "move_right", "move_up", "move_down"
+	)
+	_move_input = _to_iso_input(raw_input, move_input_deadzone)
+	if _move_input != Vector2.ZERO:
+		_last_move_direction = _move_input.normalized()
+		_move_intent_remaining = move_intent_grace
+	else:
+		_move_intent_remaining = maxf(_move_intent_remaining - delta, 0.0)
+
+func set_movement_input_override(raw_input: Vector2) -> void:
+	_movement_input_override_active = true
+	_movement_input_override = raw_input.limit_length(1.0)
+
+func clear_movement_input_override() -> void:
+	_movement_input_override_active = false
+	_movement_input_override = Vector2.ZERO
+
+static func _to_iso_input(raw_input: Vector2, deadzone: float = 0.1) -> Vector2:
+	if raw_input.length() < deadzone:
 		return Vector2.ZERO
 	var iso := Vector2(
-		raw.x - raw.y,
-		(raw.x + raw.y) * 0.5
+		raw_input.x - raw_input.y,
+		(raw_input.x + raw_input.y) * 0.5
 	)
-	return iso.normalized()
+	if iso.length() < 0.001:
+		return Vector2.ZERO
+	return iso.normalized() * minf(raw_input.length(), 1.0)
 
 func update_facing(_direction: Vector2) -> void:
 	pass

@@ -23,8 +23,7 @@ func physics_update(delta: float) -> void:
 		return
 
 	# Start moving as soon as input arrives.
-	var iso_dir: Vector2 = player.get_iso_input()
-	if iso_dir != Vector2.ZERO:
+	if player.has_move_intent():
 		state_machine.transition_to("move")
 		return
 

@@ -57,12 +57,22 @@ func set_card_data(card: CardData) -> void:
 	_update_exhaust_badge()
 	_update_rarity_indicator()
 
-	# Pop-in animation
+	# Pop-in animation with golden border flash on draw
+	pivot_offset = size / 2.0
 	scale = Vector2(0.8, 0.8)
 	modulate.a = 0.5
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	tween.tween_property(self, "modulate:a", 1.0, 0.15)
+	# Flash border gold briefly after pop-in
+	tween.chain().tween_callback(func():
+		if _panel_style:
+			var orig_border := _panel_style.border_color
+			_panel_style.border_color = Color(1.0, 0.9, 0.5, 1.0)
+			var flash_tw := create_tween()
+			flash_tw.tween_method(func(c: Color): _panel_style.border_color = c,
+				Color(1.0, 0.9, 0.5, 1.0), orig_border, 0.4)
+	)
 
 func clear_card() -> void:
 	current_card = null
@@ -151,6 +161,14 @@ func _update_exhaust_badge() -> void:
 		_exhaust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		_exhaust_label.position = Vector2(size.x - 18, 2)
 		add_child(_exhaust_label)
+
+func play_used_feedback() -> void:
+	pivot_offset = size / 2.0
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(self, "scale", Vector2(1.12, 1.12), 0.08).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "modulate", Color(1.5, 1.3, 1.0, 1.0), 0.08)
+	tween.chain().tween_property(self, "scale", Vector2(1.0, 1.0), 0.15).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(self, "modulate", Color(1, 1, 1, 1), 0.2)
 
 func play_cycle_animation() -> void:
 	var original_x: float = position.x

@@ -13,10 +13,9 @@ func enter() -> void:
 	player.clear_tracked_fx(PlayerController.DODGE_AFTERIMAGE_FX_TAG)
 
 	# Dodge in movement direction if moving, otherwise toward mouse
-	var iso_input: Vector2 = player.get_iso_input()
 	var dodge_dir: Vector2
-	if iso_input != Vector2.ZERO:
-		dodge_dir = iso_input
+	if player.has_move_intent():
+		dodge_dir = player.get_move_direction()
 	else:
 		dodge_dir = player.get_aim_direction()
 	player.velocity = dodge_dir * player.dodge_speed
@@ -39,7 +38,7 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("attack")
 		elif player.can_dodge and state_machine.consume_dodge_buffer():
 			state_machine.transition_to("dodge")
-		elif player.get_iso_input() != Vector2.ZERO:
+		elif player.has_move_intent():
 			state_machine.transition_to("move")
 		else:
 			state_machine.transition_to("idle")

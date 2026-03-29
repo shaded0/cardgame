@@ -58,7 +58,7 @@ func _ready() -> void:
 	add_child(attack_visual)
 
 	# Wire mana generation signals
-	hitbox.hit_landed.connect(func(_hurtbox: Area2D) -> void: mana_component.on_basic_attack_hit())
+	hitbox.hit_landed.connect(_on_attack_hit)
 	hurtbox.received_hit.connect(_on_player_hit)
 
 	# Initialize with class config if available
@@ -100,6 +100,14 @@ func _on_player_hit(hb: Hitbox) -> void:
 	punch.tween_property(anim_sprite, "scale", Vector2(1.0, 1.0), 0.04)
 
 	_flash_hurt()
+
+func _on_attack_hit(_hurtbox: Area2D) -> void:
+	## Feedback when the player's attack connects: hitstop, shake, mana.
+	mana_component.on_basic_attack_hit()
+	# Brief hitstop for impact weight
+	hitbox._do_hit_stop()
+	# Small shake so attacks feel punchy from the attacker side
+	ScreenFX.shake(self, 3.0, 0.06)
 
 func _setup_shadow() -> void:
 	var shadow := Sprite2D.new()

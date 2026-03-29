@@ -8,10 +8,11 @@ var _did_squash: bool = false
 func enter() -> void:
 	player.play_anim(&"idle")
 	_did_squash = false
-	# Subtle squash on stop if we were moving fast
+	# Subtle squash on stop + dust kick if we were moving fast
 	if player.velocity.length() > player.move_speed * 0.3:
 		_squash_stretch(Vector2(0.94, 1.08), 0.08)
 		_did_squash = true
+		ScreenFX.spawn_dust_puff(player.get_parent(), player.global_position, player.velocity.normalized(), 3)
 
 func physics_update(delta: float) -> void:
 	if state_machine.consume_attack_buffer():

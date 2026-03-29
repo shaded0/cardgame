@@ -143,6 +143,27 @@ static func spawn_impact_ring(parent: Node, pos: Vector2, color: Color = Color(1
 	tween.tween_property(ring, "modulate:a", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.chain().tween_callback(ring.queue_free)
 
+static func spawn_dust_puff(parent: Node, pos: Vector2, direction: Vector2 = Vector2.ZERO, count: int = 3) -> void:
+	## Small ground dust kicked up on movement start, stop, or direction change.
+	## Direction biases particles opposite to movement (dust trails behind).
+	if parent == null or not is_instance_valid(parent):
+		return
+
+	var kick_dir: Vector2 = -direction if direction.length() > 0.1 else Vector2.UP
+	for i in range(count):
+		var puff := Sprite2D.new()
+		puff.texture = PlaceholderSprites.create_circle_texture(randi_range(2, 4), Color(0.6, 0.55, 0.45, 0.4))
+		puff.global_position = pos + Vector2(randf_range(-6, 6), randf_range(0, 4))
+		puff.z_index = -1
+		parent.add_child(puff)
+
+		var spread := kick_dir.rotated(randf_range(-0.6, 0.6)) * randf_range(8.0, 18.0)
+		var tween := puff.create_tween().set_parallel(true)
+		tween.tween_property(puff, "position", puff.position + spread, randf_range(0.2, 0.35))
+		tween.tween_property(puff, "modulate:a", 0.0, 0.3).set_delay(0.05)
+		tween.tween_property(puff, "scale", Vector2(1.5, 1.5), 0.35)
+		tween.chain().tween_callback(puff.queue_free)
+
 static func spawn_smoke_puff(parent: Node, pos: Vector2, count: int = 3) -> void:
 	## Small smoke particles drifting upward.
 	if parent == null or not is_instance_valid(parent):

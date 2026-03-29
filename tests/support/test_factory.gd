@@ -1,6 +1,14 @@
 extends RefCounted
 
 const FakePlayerScript = preload("res://tests/support/fake_player.gd")
+const PlayerControllerScript = preload("res://scripts/player/player.gd")
+const PlayerStateMachineScript = preload("res://scripts/player/player_state_machine.gd")
+const IdleStateScript = preload("res://scripts/player/player_states/idle_state.gd")
+const MoveStateScript = preload("res://scripts/player/player_states/move_state.gd")
+const AttackStateScript = preload("res://scripts/player/player_states/attack_state.gd")
+const DodgeStateScript = preload("res://scripts/player/player_states/dodge_state.gd")
+const HitboxScript = preload("res://scripts/combat/hitbox.gd")
+const HurtboxScript = preload("res://scripts/combat/hurtbox.gd")
 const HealthComponentScript = preload("res://scripts/combat/health_component.gd")
 const ManaComponentScript = preload("res://scripts/combat/mana_component.gd")
 const BuffSystemScript = preload("res://scripts/combat/buff_system.gd")
@@ -9,6 +17,7 @@ const CardEffectResolverScript = preload("res://scripts/cards/card_effect_resolv
 const GameManagerScript = preload("res://scripts/managers/game_manager.gd")
 const CardDataScript = preload("res://resources/cards/card_data.gd")
 const CardEffectScript = preload("res://resources/cards/card_effect.gd")
+const ClassConfigScript = preload("res://resources/classes/class_config.gd")
 const RoomDataScript = preload("res://resources/rooms/room_data.gd")
 
 static func make_player(root: Node, add_player_group: bool = true) -> CharacterBody2D:
@@ -17,6 +26,42 @@ static func make_player(root: Node, add_player_group: bool = true) -> CharacterB
 	root.add_child(player)
 	if add_player_group:
 		player.add_to_group("player")
+	return player
+
+static func make_player_controller(root: Node, config: ClassConfig = null) -> PlayerController:
+	GameManager.current_class_config = config
+
+	var player := PlayerControllerScript.new()
+	player.name = "Player"
+
+	var hitbox := HitboxScript.new()
+	hitbox.name = "Hitbox"
+	hitbox.add_child(_make_collision_shape("CollisionShape2D"))
+	player.add_child(hitbox)
+
+	var hurtbox := HurtboxScript.new()
+	hurtbox.name = "Hurtbox"
+	player.add_child(hurtbox)
+
+	var animated_sprite := AnimatedSprite2D.new()
+	animated_sprite.name = "AnimatedSprite"
+	player.add_child(animated_sprite)
+
+	player.add_child(_make_named_child(HealthComponentScript, "HealthComponent"))
+	player.add_child(_make_named_child(ManaComponentScript, "ManaComponent"))
+	player.add_child(_make_named_child(CardManagerScript, "CardManager"))
+	player.add_child(_make_named_child(BuffSystemScript, "BuffSystem"))
+
+	var state_machine := PlayerStateMachineScript.new()
+	state_machine.name = "StateMachine"
+	state_machine.add_child(_make_named_child(IdleStateScript, "Idle"))
+	state_machine.add_child(_make_named_child(MoveStateScript, "Move"))
+	state_machine.add_child(_make_named_child(AttackStateScript, "Attack"))
+	state_machine.add_child(_make_named_child(DodgeStateScript, "Dodge"))
+	player.add_child(state_machine)
+
+	root.add_child(player)
+	player.add_to_group("player")
 	return player
 
 static func make_enemy(root: Node, position: Vector2, max_health: float = 50.0) -> Node2D:
@@ -101,6 +146,11 @@ static func make_effect(
 	effect.duration = duration
 	return effect
 
+static func make_class_config(attack_script: Script = null) -> ClassConfig:
+	var config = ClassConfigScript.new()
+	config.attack_script = attack_script
+	return config
+
 static func make_room(
 	room_id: String,
 	tier: int = 0,
@@ -115,3 +165,14 @@ static func make_room(
 	room.room_type = room_type
 	room.arena_scene_path = arena_scene_path
 	return room
+
+static func _make_named_child(script: Script, node_name: String) -> Node:
+	var node := script.new()
+	node.name = node_name
+	return node
+
+static func _make_collision_shape(node_name: String) -> CollisionShape2D:
+	var shape := CollisionShape2D.new()
+	shape.name = node_name
+	shape.shape = CircleShape2D.new()
+	return shape

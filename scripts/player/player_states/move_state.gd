@@ -4,13 +4,17 @@ extends PlayerState
 ## Uses move_toward with higher decel when reversing direction for crisp turns.
 
 var _was_moving: bool = false
+var _prev_dir: Vector2 = Vector2.ZERO
 
 func enter() -> void:
 	player.play_anim(&"run")
 	_was_moving = player.velocity.length() > 10.0
-	# Subtle stretch on movement start
+	_prev_dir = player.velocity.normalized()
+	# Subtle stretch on movement start + dust kick
 	if not _was_moving:
 		_squash_stretch(Vector2(1.08, 0.94), 0.06)
+		var iso_dir: Vector2 = player.get_iso_input()
+		ScreenFX.spawn_dust_puff(player.get_parent(), player.global_position, iso_dir, 2)
 
 func physics_update(delta: float) -> void:
 	if state_machine.consume_attack_buffer():
@@ -29,9 +33,15 @@ func physics_update(delta: float) -> void:
 
 	# Determine effective acceleration — use higher decel when turning against current velocity
 	var accel: float = player.acceleration
-	if player.velocity.length() > 10.0 and player.velocity.dot(iso_dir) < 0.0:
-		# Reversing direction: brake faster for crisp turns
+	var is_turning: bool = player.velocity.length() > 10.0 and player.velocity.dot(iso_dir) < 0.0
+	if is_turning:
+		# Reversing direction: brake faster for crisp turns + kick up dust
 		accel = player.deceleration * player.turn_decel_multiplier
+		if _prev_dir.dot(iso_dir) < -0.3:
+			ScreenFX.spawn_dust_puff(player.get_parent(), player.global_position, iso_dir, 2)
+			_prev_dir = iso_dir
+	elif iso_dir.length() > 0.1:
+		_prev_dir = iso_dir
 
 	player.velocity = player.velocity.move_toward(target_velocity, accel * delta)
 	player.update_facing(iso_dir)

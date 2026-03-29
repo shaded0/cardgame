@@ -1,0 +1,80 @@
+[gd_scene load_steps=14 format=3 uid="uid://bplayer001"]
+
+[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/player_state_machine.gd" id="2_sm"]
+[ext_resource type="Script" path="res://scripts/player/player_states/idle_state.gd" id="3_idle"]
+[ext_resource type="Script" path="res://scripts/player/player_states/move_state.gd" id="4_move"]
+[ext_resource type="Script" path="res://scripts/player/player_states/attack_state.gd" id="5_attack"]
+[ext_resource type="Script" path="res://scripts/player/player_states/dodge_state.gd" id="6_dodge"]
+[ext_resource type="Script" path="res://scripts/combat/hitbox.gd" id="7_hitbox"]
+[ext_resource type="Script" path="res://scripts/combat/hurtbox.gd" id="8_hurtbox"]
+[ext_resource type="Script" path="res://scripts/combat/health_component.gd" id="9_health"]
+[ext_resource type="Script" path="res://scripts/combat/mana_component.gd" id="10_mana"]
+[ext_resource type="Script" path="res://scripts/cards/card_manager.gd" id="11_cards"]
+[ext_resource type="Script" path="res://scripts/cards/card_effect_resolver.gd" id="12_resolver"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(12, 8)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 16.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hurtbox"]
+size = Vector2(14, 10)
+
+[node name="Player" type="CharacterBody2D" groups=["player"]]
+collision_layer = 1
+collision_mask = 2
+script = ExtResource("1_player")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(0, -12)
+texture_filter = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_body")
+
+[node name="Hitbox" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 32
+script = ExtResource("7_hitbox")
+damage = 20.0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hitbox"]
+shape = SubResource("CircleShape2D_hitbox")
+disabled = true
+
+[node name="Hurtbox" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 64
+script = ExtResource("8_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("RectangleShape2D_hurtbox")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("9_health")
+
+[node name="ManaComponent" type="Node" parent="."]
+script = ExtResource("10_mana")
+
+[node name="CardManager" type="Node" parent="."]
+script = ExtResource("11_cards")
+
+[node name="CardEffectResolver" type="Node" parent="CardManager"]
+script = ExtResource("12_resolver")
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource("2_sm")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("3_idle")
+
+[node name="Move" type="Node" parent="StateMachine"]
+script = ExtResource("4_move")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("5_attack")
+
+[node name="Dodge" type="Node" parent="StateMachine"]
+script = ExtResource("6_dodge")

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 3
+value = 20.0
+radius = 60.0
+duration = 0.0
+target_mode = 2
+
+[resource]
+script = ExtResource("1")
+card_name = "Ground Slam"
+card_class = 1
+description = "Slam the ground, damaging all nearby enemies."
+mana_cost = 25
+generates_mana = 0
+effects = Array[Resource]([SubResource("effect_1")])

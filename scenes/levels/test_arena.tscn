@@ -1,0 +1,25 @@
+[gd_scene load_steps=5 format=3 uid="uid://barena001"]
+
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="3_pause"]
+[ext_resource type="Script" path="res://scripts/levels/test_arena.gd" id="4_arena"]
+
+[node name="TestArena" type="Node2D"]
+script = ExtResource("4_arena")
+
+[node name="EntityLayer" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="EntityLayer" instance=ExtResource("1_player")]
+
+[node name="Camera2D" type="Camera2D" parent="EntityLayer/Player"]
+position_smoothing_enabled = true
+position_smoothing_speed = 8.0
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="HUD" parent="UILayer" instance=ExtResource("2_hud")]
+
+[node name="PauseMenu" parent="UILayer" instance=ExtResource("3_pause")]

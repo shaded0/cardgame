@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ClassConfig" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://resources/classes/class_config.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/player/basic_attacks/soldier_attack.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/strike.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/heal.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/mana_surge.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/shield_bash.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/war_cry.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/iron_fortress.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/ground_slam.tres" id="9"]
+
+[resource]
+script = ExtResource("1")
+class_id = &"soldier"
+display_name = "Soldier"
+max_health = 120.0
+move_speed = 120.0
+dodge_speed = 250.0
+dodge_duration = 0.4
+attack_damage = 20.0
+attack_duration = 0.5
+max_mana = 80.0
+mana_per_hit_dealt = 10.0
+mana_per_hit_taken = 15.0
+attack_script = ExtResource("2")
+card_pool = Array[Resource]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9")])

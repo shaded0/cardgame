@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ClassConfig" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://resources/classes/class_config.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/player/basic_attacks/mage_attack.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/strike.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/heal.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/mana_surge.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/cards/mage/fireball.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/cards/mage/ice_lance.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/cards/mage/arcane_surge.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/cards/mage/mana_shield.tres" id="9"]
+
+[resource]
+script = ExtResource("1")
+class_id = &"mage"
+display_name = "Mage"
+max_health = 70.0
+move_speed = 100.0
+dodge_speed = 200.0
+dodge_duration = 0.5
+attack_damage = 8.0
+attack_duration = 0.8
+max_mana = 120.0
+mana_per_hit_dealt = 4.0
+mana_per_hit_taken = 8.0
+attack_script = ExtResource("2")
+card_pool = Array[Resource]([ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9")])

@@ -45,3 +45,13 @@ func test_dodge_uses_recent_move_direction_during_grace_window() -> void:
 	player.state_machine.transition_to("dodge")
 
 	assert_true(player.velocity.normalized().dot(expected_dir) > 0.99, "Dodges should honor recent movement intent instead of snapping to mouse aim on tiny release gaps.")
+
+func test_compute_unstuck_direction_prefers_collision_normals() -> void:
+	var dir := PlayerController.compute_unstuck_direction([Vector2.LEFT, Vector2.LEFT], Vector2.RIGHT)
+
+	assert_true(dir.dot(Vector2.LEFT) > 0.99, "Unstuck direction should follow the blocking collision normals when they are available.")
+
+func test_compute_unstuck_direction_falls_back_to_backing_off_move_direction() -> void:
+	var dir := PlayerController.compute_unstuck_direction([], Vector2.UP)
+
+	assert_true(dir.dot(Vector2.DOWN) > 0.99, "Without collision normals, unstuck direction should back the player away from their stuck move direction.")

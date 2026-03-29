@@ -26,12 +26,22 @@ func _build_map() -> void:
 			child.queue_free()
 	room_buttons.clear()
 
-	# Background
+	# Background — animated fire shader at low intensity
 	if not has_node("Background"):
 		var bg := ColorRect.new()
 		bg.name = "Background"
-		bg.color = Color(0.05, 0.06, 0.09, 1.0)
 		bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		var fire_shader: Shader = load("res://shaders/fire_bg.gdshader")
+		var mat := ShaderMaterial.new()
+		mat.shader = fire_shader
+		mat.set_shader_parameter("speed", 0.4)
+		mat.set_shader_parameter("intensity", 0.25)
+		mat.set_shader_parameter("base_color", Color(0.04, 0.04, 0.07, 1.0))
+		mat.set_shader_parameter("fire_color_cool", Color(0.10, 0.02, 0.0, 1.0))
+		mat.set_shader_parameter("fire_color_mid", Color(0.5, 0.12, 0.03, 1.0))
+		mat.set_shader_parameter("fire_color_hot", Color(0.8, 0.4, 0.08, 1.0))
+		bg.material = mat
+		bg.color = Color.WHITE  # needed for shader to render
 		add_child(bg)
 		move_child(bg, 0)
 
@@ -39,12 +49,15 @@ func _build_map() -> void:
 	if not has_node("Title"):
 		var title := Label.new()
 		title.name = "Title"
-		title.text = "DUNGEON MAP"
+		title.text = "THE EMBER SANCTUM"
 		title.add_theme_font_size_override("font_size", 36)
+		title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4, 1.0))
+		title.add_theme_color_override("font_outline_color", Color(0.5, 0.15, 0.0, 0.8))
+		title.add_theme_constant_override("outline_size", 3)
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.set_anchors_preset(Control.PRESET_CENTER_TOP)
-		title.position = Vector2(-100, 20)
-		title.size = Vector2(200, 40)
+		title.position = Vector2(-150, 20)
+		title.size = Vector2(300, 40)
 		add_child(title)
 
 	# Lines container (drawn behind buttons)
@@ -98,14 +111,50 @@ func _create_room_node(room: RoomData, pos: Vector2) -> void:
 
 	# Style based on room type
 	var type_icon: String = ""
+	var bg_color: Color
+	var border_color: Color
 	match room.room_type:
-		RoomData.RoomType.COMBAT: type_icon = "[Combat] "
-		RoomData.RoomType.ELITE: type_icon = "[Elite] "
-		RoomData.RoomType.REST: type_icon = "[Rest] "
-		RoomData.RoomType.BOSS: type_icon = "[Boss] "
+		RoomData.RoomType.COMBAT:
+			type_icon = "[Combat] "
+			bg_color = Color(0.12, 0.14, 0.22)
+			border_color = Color(0.3, 0.35, 0.50)
+		RoomData.RoomType.ELITE:
+			type_icon = "[Elite] "
+			bg_color = Color(0.22, 0.10, 0.15)
+			border_color = Color(0.55, 0.2, 0.35)
+		RoomData.RoomType.REST:
+			type_icon = "[Rest] "
+			bg_color = Color(0.08, 0.18, 0.12)
+			border_color = Color(0.2, 0.45, 0.3)
+		RoomData.RoomType.BOSS:
+			type_icon = "[Boss] "
+			bg_color = Color(0.28, 0.12, 0.04)
+			border_color = Color(0.65, 0.3, 0.1)
+
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg_color
+	style.border_color = border_color
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(8)
+	btn.add_theme_stylebox_override("normal", style)
+
+	var hover_style := style.duplicate() as StyleBoxFlat
+	hover_style.bg_color = bg_color.lightened(0.15)
+	btn.add_theme_stylebox_override("hover", hover_style)
+
+	var pressed_style := style.duplicate() as StyleBoxFlat
+	pressed_style.bg_color = bg_color.lightened(0.25)
+	btn.add_theme_stylebox_override("pressed", pressed_style)
+
+	var disabled_style := style.duplicate() as StyleBoxFlat
+	disabled_style.bg_color = bg_color.darkened(0.3)
+	disabled_style.border_color = border_color.darkened(0.4)
+	btn.add_theme_stylebox_override("disabled", disabled_style)
 
 	btn.text = type_icon + room.display_name
 	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color(0.9, 0.85, 0.75))
 	btn.tooltip_text = room.description
 
 	btn.pressed.connect(func() -> void: _on_room_clicked(room))

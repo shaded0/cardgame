@@ -5,8 +5,8 @@ extends ArenaBase
 
 var spawn_timer: float = 3.5
 var max_enemies: int = 6
-var spawn_radius_min: float = 300.0
-var spawn_radius_max: float = 500.0
+var spawn_radius_min: float = 400.0
+var spawn_radius_max: float = 700.0
 var time_since_spawn: float = 1.0
 
 func _ready() -> void:

@@ -45,6 +45,7 @@ func initialize_deck(card_pool: Array[CardData]) -> void:
 
 	if deck.is_empty():
 		hand_updated.emit(hand.duplicate())
+		draw_pile_changed.emit(0)
 		return
 
 	for i in range(HAND_SIZE):

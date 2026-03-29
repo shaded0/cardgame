@@ -1,18 +1,23 @@
-[gd_resource type="Resource" script_class="RoomData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="RoomData" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/enemy_data/skeleton_data.tres" id="2_skel"]
 [ext_resource type="Resource" path="res://resources/enemy_data/fire_imp_data.tres" id="3_imp"]
 [ext_resource type="Resource" path="res://resources/enemy_data/shadow_wraith_data.tres" id="4_wraith"]
+[ext_resource type="Resource" path="res://resources/enemy_data/plague_rat_data.tres" id="5_rat"]
+[ext_resource type="Resource" path="res://resources/enemy_data/mushroom_shaman_data.tres" id="6_shaman"]
+[ext_resource type="Resource" path="res://resources/enemy_data/iron_beetle_data.tres" id="7_beetle"]
+[ext_resource type="Resource" path="res://resources/enemy_data/banshee_data.tres" id="8_banshee"]
+[ext_resource type="Resource" path="res://resources/enemy_data/bone_colossus_data.tres" id="9_colossus"]
 
 [resource]
 script = ExtResource("1")
 room_id = "dungeon_depths"
 display_name = "Dungeon Depths"
-description = "The deepest level. Skeletons, imps, and wraiths dwell here."
+description = "The deepest level. Every horror of the dungeon converges here."
 room_type = 0
 arena_scene_path = "res://scenes/levels/arena_halls.tscn"
-enemy_count = 6
+enemy_count = 7
 tier = 3
 connections = Array[String](["boss_chamber"])
-enemy_types = Array[Resource]([ExtResource("2_skel"), ExtResource("3_imp"), ExtResource("4_wraith")])
+enemy_types = Array[Resource]([ExtResource("2_skel"), ExtResource("3_imp"), ExtResource("4_wraith"), ExtResource("5_rat"), ExtResource("6_shaman"), ExtResource("7_beetle"), ExtResource("8_banshee"), ExtResource("9_colossus")])

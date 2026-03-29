@@ -34,6 +34,7 @@ func physics_update(delta: float) -> void:
 		# Briefly coast through tiny release gaps so movement doesn't chatter between move/idle.
 		player.velocity = player.velocity.move_toward(Vector2.ZERO, player.deceleration * delta * 0.65)
 		player.move_and_slide()
+		player.report_motion_step(delta)
 		return
 
 	_update_move_animation(input_strength)
@@ -54,6 +55,7 @@ func physics_update(delta: float) -> void:
 	player.velocity = player.velocity.move_toward(target_velocity, accel * delta)
 	player.update_facing(iso_dir)
 	player.move_and_slide()
+	player.report_motion_step(delta)
 
 func exit() -> void:
 	_was_moving = false

@@ -31,6 +31,7 @@ func physics_update(delta: float) -> void:
 	if player.velocity.length() > 5.0:
 		player.velocity = player.velocity.move_toward(Vector2.ZERO, player.deceleration * delta)
 		player.move_and_slide()
+		player.report_motion_step(delta)
 	else:
 		player.velocity = Vector2.ZERO
 

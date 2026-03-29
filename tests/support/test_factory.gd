@@ -47,6 +47,13 @@ static func make_player_controller(root: Node, config: ClassConfig = null) -> Pl
 	animated_sprite.name = "AnimatedSprite"
 	player.add_child(animated_sprite)
 
+	var body_shape := CollisionShape2D.new()
+	body_shape.name = "CollisionShape2D"
+	var body_circle := CircleShape2D.new()
+	body_circle.radius = 14.0
+	body_shape.shape = body_circle
+	player.add_child(body_shape)
+
 	player.add_child(_make_named_child(HealthComponentScript, "HealthComponent"))
 	player.add_child(_make_named_child(ManaComponentScript, "ManaComponent"))
 	player.add_child(_make_named_child(CardManagerScript, "CardManager"))
@@ -79,7 +86,7 @@ static func add_health(owner: Node, max_health: float = 100.0, current_health: f
 	health.max_health = max_health
 	owner.add_child(health)
 	if current_health >= 0.0:
-		health.current_health = current_health
+		health.set_current_health(current_health)
 	return health
 
 static func add_mana(owner: Node, max_mana: float = 100.0, current_mana: float = 0.0) -> Node:

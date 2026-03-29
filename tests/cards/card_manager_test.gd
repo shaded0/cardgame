@@ -63,3 +63,18 @@ func test_try_play_card_stops_when_mana_is_insufficient() -> void:
 	assert_eq(mana.current_mana, 5.0, "Failed plays should not spend mana.")
 	assert_eq(card_manager.hand[0], expensive, "Failed plays should leave the hand unchanged.")
 	assert_eq(played_count, 0, "Failed plays should not emit card_played.")
+
+func test_initialize_deck_with_no_cards_emits_empty_draw_pile_count() -> void:
+	var player := Factory.make_player(root)
+	Factory.add_mana(player, 100.0, 100.0)
+	var card_manager = Factory.add_card_manager(player)
+
+	var draw_counts: Array[int] = []
+	card_manager.draw_pile_changed.connect(func(count: int) -> void:
+		draw_counts.append(count)
+	)
+
+	card_manager.initialize_deck([])
+
+	assert_eq(card_manager.hand.size(), 0, "Empty decks should leave the player's hand empty.")
+	assert_eq(draw_counts, [0], "Empty decks should explicitly emit a zero draw pile count so the HUD stays in sync.")

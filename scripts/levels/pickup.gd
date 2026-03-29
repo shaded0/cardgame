@@ -9,6 +9,7 @@ enum PickupType { HEALTH, MANA }
 var pickup_type: PickupType = PickupType.HEALTH
 var _launched: bool = false
 var _homing: bool = false
+var _collected: bool = false
 var _launch_velocity: Vector2 = Vector2.ZERO
 var _sprite: Sprite2D
 
@@ -94,6 +95,14 @@ func _on_body_collected(body: Node2D) -> void:
 		_collect(body)
 
 func _collect(player: PlayerController) -> void:
+	if _collected:
+		return
+	_collected = true
+	_homing = false
+	_launched = false
+	set_deferred("monitoring", false)
+	set_deferred("monitorable", false)
+
 	match pickup_type:
 		PickupType.HEALTH:
 			if player.has_node("HealthComponent"):

@@ -1,18 +1,21 @@
-[gd_resource type="Resource" script_class="RoomData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="RoomData" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/enemy_data/shadow_wraith_data.tres" id="2_wraith"]
 [ext_resource type="Resource" path="res://resources/enemy_data/fire_imp_data.tres" id="3_imp"]
 [ext_resource type="Resource" path="res://resources/enemy_data/skeleton_data.tres" id="4_skel"]
+[ext_resource type="Resource" path="res://resources/enemy_data/mushroom_shaman_data.tres" id="5_shaman"]
+[ext_resource type="Resource" path="res://resources/enemy_data/iron_beetle_data.tres" id="6_beetle"]
+[ext_resource type="Resource" path="res://resources/enemy_data/banshee_data.tres" id="7_banshee"]
 
 [resource]
 script = ExtResource("1")
 room_id = "trapped_hall"
 display_name = "Trapped Hall"
-description = "An elite gauntlet. Wraiths and imps ambush from the shadows."
+description = "An elite gauntlet. Shamans empower armored beetles while banshees wail from the shadows."
 room_type = 1
 arena_scene_path = "res://scenes/levels/arena_chamber.tscn"
-enemy_count = 5
+enemy_count = 6
 tier = 3
 connections = Array[String](["boss_chamber"])
-enemy_types = Array[Resource]([ExtResource("2_wraith"), ExtResource("2_wraith"), ExtResource("3_imp"), ExtResource("4_skel")])
+enemy_types = Array[Resource]([ExtResource("2_wraith"), ExtResource("3_imp"), ExtResource("4_skel"), ExtResource("5_shaman"), ExtResource("6_beetle"), ExtResource("7_banshee")])

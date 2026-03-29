@@ -29,6 +29,7 @@ func enter() -> void:
 func physics_update(delta: float) -> void:
 	# Keep moving during dodge then slow to stop.
 	player.move_and_slide()
+	player.report_motion_step(delta)
 	# Decelerate
 	player.velocity = player.velocity.lerp(Vector2.ZERO, 5.0 * delta)
 

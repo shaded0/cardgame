@@ -17,6 +17,11 @@ const DODGE_AFTERIMAGE_FX_TAG := "dodge_afterimage"
 @export var turn_decel_multiplier: float = 1.85  ## Extra decel when reversing direction
 @export var move_input_deadzone: float = 0.12
 @export var move_intent_grace: float = 0.08
+@export var unstuck_threshold_time: float = 0.14
+@export var unstuck_min_speed: float = 90.0
+@export var unstuck_max_displacement_per_second: float = 24.0
+@export var unstuck_nudge_distance: float = 4.0
+@export var unstuck_cooldown: float = 0.12
 
 ## Base stats stored so buffs can add/remove from a known baseline.
 var base_move_speed: float = 420.0
@@ -35,6 +40,9 @@ var _last_move_direction: Vector2 = Vector2(1, 0.5).normalized()
 var _move_intent_remaining: float = 0.0
 var _movement_input_override_active: bool = false
 var _movement_input_override: Vector2 = Vector2.ZERO
+var _last_motion_position: Vector2 = Vector2.ZERO
+var _stuck_time: float = 0.0
+var _unstuck_cooldown_remaining: float = 0.0
 
 ## Core player node with components:
 ## - hitbox/hurtbox (combat)
@@ -56,6 +64,7 @@ var _movement_input_override: Vector2 = Vector2.ZERO
 func _ready() -> void:
 	_refresh_combat_refs()
 	update_movement_input(0.0)
+	_last_motion_position = global_position
 	# Start with disabled melee hitbox; each attack enables it on demand.
 	hitbox_shape.disabled = true
 
@@ -168,6 +177,62 @@ func _process(_delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_attack_watchdog(delta)
+
+func report_motion_step(delta: float) -> void:
+	if _unstuck_cooldown_remaining > 0.0:
+		_unstuck_cooldown_remaining = maxf(_unstuck_cooldown_remaining - delta, 0.0)
+
+	var displacement: float = global_position.distance_to(_last_motion_position)
+	_last_motion_position = global_position
+
+	if not has_move_intent() or velocity.length() < unstuck_min_speed:
+		_stuck_time = 0.0
+		return
+
+	var collision_count: int = get_slide_collision_count()
+	if collision_count <= 0:
+		_stuck_time = 0.0
+		return
+
+	var moved_enough: bool = displacement > unstuck_max_displacement_per_second * delta
+	if moved_enough:
+		_stuck_time = 0.0
+		return
+
+	_stuck_time += delta
+	if _stuck_time < unstuck_threshold_time or _unstuck_cooldown_remaining > 0.0:
+		return
+
+	_try_unstuck(collision_count)
+
+func _try_unstuck(collision_count: int) -> void:
+	var collision_normals: Array[Vector2] = []
+	for i in range(collision_count):
+		var collision := get_slide_collision(i)
+		if collision:
+			collision_normals.append(collision.get_normal())
+
+	var escape_dir := compute_unstuck_direction(collision_normals, get_move_direction())
+	if escape_dir == Vector2.ZERO:
+		return
+
+	global_position += escape_dir * unstuck_nudge_distance
+	velocity = velocity.slide(escape_dir)
+	_stuck_time = 0.0
+	_unstuck_cooldown_remaining = unstuck_cooldown
+	_log_attack("movement_unstuck", {"dir": escape_dir, "collisions": collision_count})
+
+static func compute_unstuck_direction(collision_normals: Array[Vector2], move_direction: Vector2) -> Vector2:
+	var normal_sum := Vector2.ZERO
+	for normal in collision_normals:
+		if normal is Vector2 and normal.length() > 0.001:
+			normal_sum += normal.normalized()
+
+	if normal_sum.length() > 0.001:
+		return normal_sum.normalized()
+	if move_direction.length() > 0.001:
+		return -move_direction.normalized()
+	return Vector2.ZERO
 
 func play_anim(anim_name: StringName) -> void:
 	if current_anim != anim_name:

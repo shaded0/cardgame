@@ -40,6 +40,7 @@ func _ready() -> void:
 	hitbox_shape.disabled = true
 
 	_setup_animated_sprite()
+	_setup_shadow()
 
 	# Create attack visual indicator
 	attack_visual = Sprite2D.new()
@@ -82,6 +83,14 @@ func _on_player_hit(hb: Hitbox) -> void:
 	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 5, Color(1.0, 0.4, 0.3))
 
 	_flash_hurt()
+
+func _setup_shadow() -> void:
+	var shadow := Sprite2D.new()
+	shadow.texture = PlaceholderSprites.create_shadow_texture(40, 16)
+	shadow.offset = Vector2(0, 4)
+	shadow.z_index = -2
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(shadow)
 
 func _setup_animated_sprite() -> void:
 	var config: ClassConfig = GameManager.current_class_config

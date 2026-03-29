@@ -6,6 +6,7 @@ extends RefCounted
 
 static var _rect_cache: Dictionary = {}
 static var _circle_cache: Dictionary = {}
+static var _shadow_cache: Dictionary = {}
 
 static func create_rect_texture(width: int, height: int, color: Color) -> ImageTexture:
 	# Cache generated textures because combat FX request the same shapes repeatedly.
@@ -179,6 +180,26 @@ static func create_enemy_texture(size: int, body_color: Color, enemy_type: Strin
 			draw_circle_fn.call(image, Vector2(cx, cy + 10 * s), 8 * s, Color(0, 0, 0, 0.15))
 
 	return ImageTexture.create_from_image(image)
+
+static func create_shadow_texture(width: int, height: int) -> ImageTexture:
+	var key := "shadow:%d:%d" % [width, height]
+	if _shadow_cache.has(key):
+		return _shadow_cache[key]
+
+	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
+	var cx: float = width / 2.0
+	var cy: float = height / 2.0
+	for x in range(width):
+		for y in range(height):
+			var dx: float = (float(x) - cx) / cx
+			var dy: float = (float(y) - cy) / cy
+			var dist_sq: float = dx * dx + dy * dy
+			if dist_sq <= 1.0:
+				var alpha: float = 0.35 * (1.0 - dist_sq)
+				image.set_pixel(x, y, Color(0.0, 0.0, 0.0, alpha))
+	var texture := ImageTexture.create_from_image(image)
+	_shadow_cache[key] = texture
+	return texture
 
 static func create_diamond_texture(width: int, height: int, color: Color) -> ImageTexture:
 	# Use Manhattan distance to fill a neat diamond tile shape (for floor/pathing debug art).

@@ -152,22 +152,14 @@ func _on_room_clicked(room: RoomData) -> void:
 		return
 
 	if room.room_type == RoomData.RoomType.REST:
-		GameManager.enter_room(room)
-		# Refresh map in place — rest doesn't leave the map
-		_refresh_button_states()
-		# Show heal text
-		var heal_label := Label.new()
-		heal_label.text = "HP Restored!"
-		heal_label.add_theme_font_size_override("font_size", 28)
-		heal_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3))
-		heal_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		heal_label.set_anchors_preset(Control.PRESET_CENTER)
-		heal_label.position = Vector2(-100, -20)
-		heal_label.size = Vector2(200, 40)
-		add_child(heal_label)
-		var tween: Tween = heal_label.create_tween()
-		tween.tween_property(heal_label, "modulate:a", 0.0, 1.5).set_delay(0.5)
-		tween.tween_callback(heal_label.queue_free)
+		# Show rest screen overlay with heal/upgrade choice.
+		var rest_scene: PackedScene = load("res://scenes/ui/rest_screen.tscn")
+		var rest_screen: CanvasLayer = rest_scene.instantiate()
+		add_child(rest_screen)
+		rest_screen.rest_completed.connect(func() -> void:
+			GameManager.enter_room(room)
+			_refresh_button_states()
+		)
 	else:
 		GameManager.enter_room(room)
 

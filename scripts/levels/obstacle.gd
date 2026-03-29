@@ -49,6 +49,16 @@ func setup(type: ObstacleType, pos: Vector2) -> void:
 	add_child(shape)
 	add_child(sprite)
 
+	# Drop shadow beneath obstacle
+	var shadow := Sprite2D.new()
+	var shadow_w: int = int(shape.shape.size.x * 1.2)
+	var shadow_h: int = int(shape.shape.size.y * 0.6)
+	shadow.texture = PlaceholderSprites.create_shadow_texture(maxi(shadow_w, 8), maxi(shadow_h, 6))
+	shadow.offset = Vector2(0, 4)
+	shadow.z_index = -2
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(shadow)
+
 	# Area2D detector to block projectiles on contact.
 	var blocker := Area2D.new()
 	blocker.collision_layer = 0  # Not a body — pure detector

@@ -129,8 +129,8 @@ func _resolve_debuff(effect: CardEffect) -> void:
 	if target == null:
 		return
 
-	var debuff_sys: DebuffSystem = target.get_node_or_null("DebuffSystem")
-	if debuff_sys == null:
+	var debuff_sys: Node = target.get_node_or_null("DebuffSystem")
+	if debuff_sys == null or not debuff_sys.has_method("add_debuff"):
 		return
 
 	var debuff_t: Debuff.Type
@@ -142,7 +142,7 @@ func _resolve_debuff(effect: CardEffect) -> void:
 
 	var duration: float = effect.duration if effect.duration > 0.0 else 5.0
 	var debuff: Debuff = Debuff.create(debuff_t, duration)
-	debuff_sys.add_debuff(debuff)
+	debuff_sys.call("add_debuff", debuff)
 
 func _resolve_multi_hit(effect: CardEffect, is_x_cost: bool = false) -> void:
 	## Deal damage N times with staggered visuals.

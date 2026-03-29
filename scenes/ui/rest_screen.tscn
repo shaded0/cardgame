@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://crest01"]
+
+[ext_resource type="Script" path="res://scripts/ui/rest_screen.gd" id="1_rest"]
+
+[node name="RestScreen" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_rest")

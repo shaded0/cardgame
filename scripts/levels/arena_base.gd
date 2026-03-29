@@ -22,9 +22,12 @@ var room_clear_enabled: bool = true
 
 @onready var entity_layer: Node2D = $EntityLayer
 
+var _vignette_shader: Shader = preload("res://shaders/vignette.gdshader")
+
 func _ready() -> void:
 	queue_redraw()
 	_configure_from_current_room()
+	_setup_vignette()
 
 	if spawn_initial_wave:
 		# Spawn enemies after a brief delay so the scene is fully assembled first.
@@ -55,8 +58,12 @@ func _draw() -> void:
 			else:
 				floor_color = Color(0.11, 0.13, 0.18, 1.0)
 
-			# Edge tiles get a fiery border tint
+			# Ambient depth gradient — darken tiles further from center
 			var edge_dist := absi(ix) + absi(iy)
+			var depth_t: float = float(edge_dist) / float(grid_count)
+			floor_color = floor_color.darkened(depth_t * 0.25)
+
+			# Edge tiles get a fiery border tint
 			if edge_dist == grid_count:
 				floor_color = Color(0.12, 0.06, 0.04, 1.0)
 			elif edge_dist == grid_count - 1:
@@ -71,6 +78,26 @@ func _draw() -> void:
 				Vector2(screen_x - hw, screen_y),
 			])
 			draw_colored_polygon(points, floor_color)
+
+			# South-facing tile edge for 3D thickness
+			var edge_h: float = 5.0
+			var side_color: Color = floor_color.darkened(0.4)
+			# Right-south edge (bottom-right face)
+			var right_edge := PackedVector2Array([
+				points[1],  # right vertex
+				points[2],  # bottom vertex
+				Vector2(points[2].x, points[2].y + edge_h),
+				Vector2(points[1].x, points[1].y + edge_h),
+			])
+			draw_colored_polygon(right_edge, side_color)
+			# Left-south edge (bottom-left face)
+			var left_edge := PackedVector2Array([
+				points[2],  # bottom vertex
+				points[3],  # left vertex
+				Vector2(points[3].x, points[3].y + edge_h),
+				Vector2(points[2].x, points[2].y + edge_h),
+			])
+			draw_colored_polygon(left_edge, side_color.darkened(0.15))
 
 			# Grid lines - brighter near edges for lava glow feel
 			var line_alpha := 0.3
@@ -184,6 +211,19 @@ func _show_card_rewards() -> void:
 	reward_screen.rewards_skipped.connect(func() -> void:
 		GameManager.go_to_map()
 	)
+
+func _setup_vignette() -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 5
+	add_child(layer)
+
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := ShaderMaterial.new()
+	mat.shader = _vignette_shader
+	rect.material = mat
+	layer.add_child(rect)
 
 ## Override in subclasses to place obstacles
 func _place_obstacles() -> void:

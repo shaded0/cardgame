@@ -22,7 +22,7 @@ var player: CharacterBody2D = null
 @onready var hurtbox: Hurtbox = $Hurtbox
 @onready var health_component: HealthComponent = $HealthComponent
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
-@onready var debuff_system: DebuffSystem = $DebuffSystem
+@onready var debuff_system: Node = $DebuffSystem
 
 func _ready() -> void:
 	add_to_group("enemies")
@@ -32,6 +32,14 @@ func _ready() -> void:
 	anim_sprite.sprite_frames = SpriteAnimator.create_slime_frames(Color(0.4, 0.8, 0.3, 1.0))
 	anim_sprite.offset = Vector2(0, -18)
 	anim_sprite.play(&"idle")
+
+	# Drop shadow beneath enemy
+	var shadow := Sprite2D.new()
+	shadow.texture = PlaceholderSprites.create_shadow_texture(30, 12)
+	shadow.offset = Vector2(0, 2)
+	shadow.z_index = -2
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(shadow)
 
 	health_component.died.connect(_on_died)
 	hurtbox.received_hit.connect(_on_received_hit)
@@ -97,7 +105,7 @@ func _do_attack() -> void:
 	hitbox_shape.disabled = false
 	hitbox.reset_targets()
 	# Apply Weak debuff multiplier to outgoing damage.
-	hitbox.damage = attack_damage * debuff_system.get_attack_multiplier()
+	hitbox.damage = attack_damage * _get_attack_multiplier()
 	hitbox.position = (player.global_position - global_position).normalized() * 36.0
 	_play_anim(&"attack")
 
@@ -106,6 +114,8 @@ func _do_attack() -> void:
 	var timer: SceneTreeTimer = get_tree().create_timer(0.3)
 	timer.timeout.connect(func() -> void:
 		if not is_instance_valid(self) or current_state == State.DEAD:
+			return
+		if not is_instance_valid(hitbox_shape) or not is_instance_valid(hitbox):
 			return
 		hitbox_shape.disabled = true
 		hitbox.position = Vector2.ZERO
@@ -125,7 +135,7 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 		return
 
 	# Apply Vulnerable debuff multiplier to incoming damage.
-	var final_damage: float = incoming_hitbox.damage * debuff_system.get_damage_multiplier()
+	var final_damage: float = incoming_hitbox.damage * _get_damage_multiplier()
 	health_component.take_damage(final_damage)
 	if current_state == State.DEAD:
 		return
@@ -157,7 +167,8 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 func _on_died() -> void:
 	current_state = State.DEAD
 	# Disable all combat interactions immediately.
-	hitbox_shape.disabled = true
+	if is_instance_valid(hitbox_shape):
+		hitbox_shape.disabled = true
 	hurtbox.is_invincible = true
 	var hurtbox_shape: CollisionShape2D = hurtbox.get_node_or_null("CollisionShape2D")
 	if hurtbox_shape:
@@ -174,3 +185,13 @@ func _on_died() -> void:
 	tween.tween_property(self, "modulate:a", 0.0, 0.4)
 	tween.tween_property(self, "scale", Vector2(1.3, 0.5), 0.3).set_ease(Tween.EASE_IN)
 	tween.chain().tween_callback(queue_free)
+
+func _get_attack_multiplier() -> float:
+	if debuff_system and debuff_system.has_method("get_attack_multiplier"):
+		return float(debuff_system.call("get_attack_multiplier"))
+	return 1.0
+
+func _get_damage_multiplier() -> float:
+	if debuff_system and debuff_system.has_method("get_damage_multiplier"):
+		return float(debuff_system.call("get_damage_multiplier"))
+	return 1.0

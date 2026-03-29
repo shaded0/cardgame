@@ -19,6 +19,6 @@ card_class = 3
 description = "Conjure a shield of pure mana."
 mana_cost = 25
 generates_mana = 0
-pauses_game = true
+pauses_game = false
 effects = Array[Resource]([SubResource("effect_1")])
 upgraded_version = ExtResource("3_upgrade")

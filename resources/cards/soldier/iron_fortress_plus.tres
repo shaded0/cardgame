@@ -19,6 +19,6 @@ rarity = 1
 description = "Raise an iron shield to absorb damage."
 mana_cost = 25
 generates_mana = 0
-pauses_game = true
+pauses_game = false
 is_upgraded = true
 effects = Array[Resource]([SubResource("effect_1")])

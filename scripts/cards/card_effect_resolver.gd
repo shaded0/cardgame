@@ -15,14 +15,27 @@ func _ready() -> void:
 
 func _on_card_played(card: CardData, _slot_index: int, mana_spent: float) -> void:
 	_x_cost_mana = mana_spent
-	_flash_card_play()
+	_flash_card_play(card)
 	for effect in card.effects:
 		resolve_effect(effect, card.is_x_cost)
 
-func _flash_card_play() -> void:
-	player.modulate = Color(1.3, 1.3, 1.5, 1.0)
+func _flash_card_play(card: CardData) -> void:
+	# Brighter flash + screen shake so cards feel impactful vs basic attacks.
+	player.modulate = Color(1.5, 1.5, 1.8, 1.0)
+	ScreenFX.shake(player, 5.0, 0.1)
+
+	# Brief hitstop — cards should feel weighty. AOE/damage cards get more.
+	var has_damage := false
+	for effect in card.effects:
+		if effect.type in [CardEffect.EffectType.DAMAGE, CardEffect.EffectType.AOE, CardEffect.EffectType.MULTI_HIT]:
+			has_damage = true
+			break
+
+	if has_damage and player.is_inside_tree():
+		ScreenFX.hit_freeze(player.get_tree(), 0.08)
+
 	if player.is_inside_tree():
-		var timer: SceneTreeTimer = player.get_tree().create_timer(0.08)
+		var timer: SceneTreeTimer = player.get_tree().create_timer(0.1, true, false, true)
 		timer.timeout.connect(func() -> void:
 			if is_instance_valid(player):
 				player.modulate = Color(1, 1, 1, 1)
@@ -63,6 +76,9 @@ func _resolve_damage(effect: CardEffect, is_x_cost: bool = false) -> void:
 		SpellEffectVisual.spawn_slash(player.get_parent(), target.global_position,
 			(target.global_position - player.global_position).normalized(), Color(1.0, 0.8, 0.2, 0.9))
 		DamageNumber.spawn(player.get_parent(), target.global_position, dmg, Color(1.0, 0.9, 0.3))
+		# Card damage gets spark burst + shake to distinguish from basic attacks.
+		ScreenFX.spawn_hit_sparks(player.get_parent(), target.global_position, 6, Color(1.0, 0.7, 0.3))
+		ScreenFX.shake(player, 6.0, 0.1)
 
 func _resolve_heal(effect: CardEffect, is_x_cost: bool = false) -> void:
 	var health: HealthComponent = player.get_node("HealthComponent")
@@ -101,6 +117,12 @@ func _resolve_aoe(effect: CardEffect, is_x_cost: bool = false) -> void:
 	var dmg: float = _get_scaled_value(effect.value, is_x_cost)
 	SpellEffectVisual.spawn_burst(player.get_parent(), center, effect.radius, Color(1.0, 0.5, 0.2, 0.5))
 
+	# AOE cards get big juice — screen shake + impact ring proportional to radius.
+	ScreenFX.shake(player, 10.0, 0.2)
+	ScreenFX.spawn_impact_ring(player.get_parent(), center, Color(1.0, 0.8, 0.4, 0.6), effect.radius * 1.2)
+	ScreenFX.flash(player, Color(1.0, 0.9, 0.6, 0.15), 0.08)
+
+	var hit_count: int = 0
 	for enemy in enemies:
 		if not (enemy is Node2D) or not is_instance_valid(enemy):
 			continue
@@ -108,6 +130,11 @@ func _resolve_aoe(effect: CardEffect, is_x_cost: bool = false) -> void:
 			if enemy.has_node("HealthComponent"):
 				enemy.get_node("HealthComponent").take_damage(dmg)
 				DamageNumber.spawn(player.get_parent(), enemy.global_position, dmg, Color(1.0, 0.6, 0.2))
+				hit_count += 1
+
+	# Longer hitstop for multi-enemy hits — makes AOE cards feel devastating.
+	if hit_count > 0 and player.is_inside_tree():
+		ScreenFX.hit_freeze(player.get_tree(), 0.06 + hit_count * 0.02)
 
 func _resolve_buff(effect: CardEffect) -> void:
 	var buff_sys: BuffSystem = player.get_node_or_null("BuffSystem")

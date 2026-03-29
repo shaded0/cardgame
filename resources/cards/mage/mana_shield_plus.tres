@@ -19,6 +19,6 @@ rarity = 1
 description = "Conjure a shield of pure mana."
 mana_cost = 20
 generates_mana = 0
-pauses_game = true
+pauses_game = false
 is_upgraded = true
 effects = Array[Resource]([SubResource("effect_1")])

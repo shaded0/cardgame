@@ -22,6 +22,13 @@ var _base_time_scale: float = 1.0  ## Track non-tactical time scale so hitstop/e
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
+func _notification(what: int) -> void:
+	# Restore time scale if we're removed mid-tactical-focus (scene change, death, etc.)
+	if what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
+		if _tactical_focus_active:
+			_tactical_focus_active = false
+			Engine.time_scale = 1.0
+
 func initialize_deck(card_pool: Array[CardData]) -> void:
 	deck = card_pool.duplicate()
 	draw_pile = deck.duplicate()

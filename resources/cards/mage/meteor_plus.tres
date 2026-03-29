@@ -21,6 +21,6 @@ mana_cost = 0
 generates_mana = false
 is_x_cost = true
 exhaust = true
-pauses_game = true
+pauses_game = false
 is_upgraded = true
 effects = Array[Resource]([SubResource("effect_1")])

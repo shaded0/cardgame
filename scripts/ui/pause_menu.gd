@@ -61,8 +61,8 @@ func _populate_card_details() -> void:
 		label.add_theme_font_size_override("font_size", 16)
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD
 
-		var can_afford: bool = mana_comp.current_mana >= card.mana_cost
-		var cost_str: String = str(card.mana_cost)
+		var can_afford: bool = card_mgr.can_play_card(card, mana_comp.current_mana)
+		var cost_str: String = card.get_cost_label()
 
 		label.text = "[%d] %s (%s mana)\n    %s" % [i + 1, card.card_name, cost_str, card.description]
 

@@ -34,49 +34,63 @@ func _load_all_cards() -> void:
 func get_reward_options(class_id: StringName, count: int = 3, is_elite: bool = false) -> Array[CardData]:
 	## Returns `count` random cards, weighted by rarity, for the given class.
 	## Elite rooms skew toward higher rarity.
-	var eligible: Array[CardData] = []
+	## Prefer new cards first, but fall back to owned cards so reward screens still offer real choices late in a run.
+	var fresh_cards: Array[CardData] = []
+	var fallback_cards: Array[CardData] = []
 	var current_deck: Array[CardData] = GameManager.run_deck
 
 	for card in all_cards:
-		# Only offer class-matching or neutral cards.
-		var matches_class: bool = false
-		match class_id:
-			&"soldier":
-				matches_class = card.card_class == CardData.CardClass.SOLDIER or card.card_class == CardData.CardClass.NEUTRAL
-			&"rogue":
-				matches_class = card.card_class == CardData.CardClass.ROGUE or card.card_class == CardData.CardClass.NEUTRAL
-			&"mage":
-				matches_class = card.card_class == CardData.CardClass.MAGE or card.card_class == CardData.CardClass.NEUTRAL
-			_:
-				matches_class = card.card_class == CardData.CardClass.NEUTRAL
-
-		if not matches_class:
+		if not _matches_class(card, class_id):
 			continue
 
-		# Skip cards already in the run deck (no duplicate offerings).
-		var already_in_deck: bool = false
-		for deck_card in current_deck:
-			if deck_card.card_name == card.card_name:
-				already_in_deck = true
-				break
-		if already_in_deck:
-			continue
+		if _deck_contains_card_name(current_deck, card.card_name):
+			fallback_cards.append(card)
+		else:
+			fresh_cards.append(card)
 
-		eligible.append(card)
+	var results: Array[CardData] = _pick_unique_cards(fresh_cards, count, is_elite)
+	if results.size() < count:
+		var already_picked: Array[String] = []
+		for card in results:
+			already_picked.append(card.card_name)
 
-	if eligible.is_empty():
-		return []
+		var duplicate_fallback: Array[CardData] = []
+		for card in fallback_cards:
+			if card.card_name in already_picked:
+				continue
+			duplicate_fallback.append(card)
 
-	# Weighted random selection by rarity.
-	var results: Array[CardData] = []
-	for _i in range(count):
-		if eligible.is_empty():
-			break
-		var pick: CardData = _weighted_pick(eligible, is_elite)
-		results.append(pick)
-		eligible.erase(pick)
+		results.append_array(_pick_unique_cards(duplicate_fallback, count - results.size(), is_elite))
 
 	return results
+
+func _pick_unique_cards(source: Array[CardData], count: int, is_elite: bool) -> Array[CardData]:
+	var pool: Array[CardData] = source.duplicate()
+	var results: Array[CardData] = []
+	for _i in range(count):
+		if pool.is_empty():
+			break
+		var pick: CardData = _weighted_pick(pool, is_elite)
+		results.append(pick)
+		pool.erase(pick)
+	return results
+
+func _matches_class(card: CardData, class_id: StringName) -> bool:
+	match class_id:
+		&"soldier":
+			return card.card_class == CardData.CardClass.SOLDIER or card.card_class == CardData.CardClass.NEUTRAL
+		&"rogue":
+			return card.card_class == CardData.CardClass.ROGUE or card.card_class == CardData.CardClass.NEUTRAL
+		&"mage":
+			return card.card_class == CardData.CardClass.MAGE or card.card_class == CardData.CardClass.NEUTRAL
+		_:
+			return card.card_class == CardData.CardClass.NEUTRAL
+
+func _deck_contains_card_name(deck: Array[CardData], card_name: String) -> bool:
+	for deck_card in deck:
+		if deck_card.card_name == card_name:
+			return true
+	return false
 
 func _weighted_pick(cards: Array[CardData], is_elite: bool) -> CardData:
 	## Rarity weights: normal = 60/30/10, elite = 35/40/25 (C/U/R).

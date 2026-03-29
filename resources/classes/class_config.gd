@@ -11,6 +11,7 @@ extends Resource
 @export var max_health: float = 120.0
 @export var move_speed: float = 120.0
 @export var dodge_speed: float = 250.0
+@export var dodge_cooldown: float = 0.8
 @export var dodge_duration: float = 0.4
 @export var attack_damage: float = 20.0
 @export var attack_duration: float = 0.5

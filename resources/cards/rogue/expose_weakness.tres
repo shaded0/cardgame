@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="CardData" load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
 [ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/rogue/expose_weakness_plus.tres" id="3_upgrade"]
 [ext_resource type="Resource" path="res://resources/cards/rogue/expose_weakness_plus.tres" id="3_upgrade"]
 
 [sub_resource type="Resource" id="effect_1"]
@@ -22,4 +23,5 @@ description = "Apply Vulnerable to nearest enemy for 5s. Vulnerable enemies take
 mana_cost = 15
 generates_mana = false
 effects = Array[Resource]([SubResource("effect_1")])
+upgraded_version = ExtResource("3_upgrade")
 upgraded_version = ExtResource("3_upgrade")

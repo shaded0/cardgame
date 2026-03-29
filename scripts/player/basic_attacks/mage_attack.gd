@@ -6,10 +6,10 @@ const PROJECTILE_SPEED: float = 540.0
 const PROJECTILE_RANGE: float = 1200.0
 const PROJECTILE_LIFETIME: float = 2.2
 
-func execute(player: CharacterBody2D, direction: Vector2) -> void:
+func execute(player: PlayerController, direction: Vector2) -> void:
 	_spawn_bolt(player, direction)
 
-func _spawn_bolt(player: CharacterBody2D, direction: Vector2) -> void:
+func _spawn_bolt(player: PlayerController, direction: Vector2) -> void:
 	var parent: Node = player.get_parent()
 	if parent == null or not is_instance_valid(parent):
 		return

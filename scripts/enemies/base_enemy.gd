@@ -223,6 +223,12 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 	ScreenFX.shake(self, 4.0, 0.08)
 
 	modulate = Color(3, 3, 3, 1)
+	# Scale punch on hit
+	var punch_tween := create_tween()
+	punch_tween.tween_property(anim_sprite, "scale", Vector2(1.15, 0.85), 0.04)
+	punch_tween.tween_property(anim_sprite, "scale", Vector2(0.95, 1.05), 0.04)
+	punch_tween.tween_property(anim_sprite, "scale", Vector2(1.0, 1.0), 0.04)
+
 	if is_inside_tree():
 		var flash_timer: SceneTreeTimer = get_tree().create_timer(0.08)
 		flash_timer.timeout.connect(func() -> void:
@@ -258,11 +264,17 @@ func _on_died() -> void:
 	if hurtbox_shape:
 		hurtbox_shape.set_deferred("disabled", true)
 
-	# Death burst effect
+	# Death burst effect — bright flash, sparks, smoke, shockwave
+	modulate = Color(4, 4, 4, 1)  # Bright white flash before death
+	ScreenFX.flash(self, Color(1.0, 0.8, 0.4, 0.3), 0.1)
 	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 10, Color(1.0, 0.6, 0.2))
 	ScreenFX.spawn_ground_crack(get_parent(), global_position, 25.0)
+	ScreenFX.spawn_impact_ring(get_parent(), global_position, Color(1.0, 0.7, 0.3, 0.5), 40.0)
 	ScreenFX.shake(self, 6.0, 0.15)
 	SpellEffectVisual.spawn_burst(get_parent(), global_position, 18.0, Color(1.0, 0.5, 0.2, 0.5), 0.35)
+
+	# Smoke puffs during fade
+	ScreenFX.spawn_smoke_puff(get_parent(), global_position, 4)
 
 	var tween: Tween = create_tween()
 	tween.set_parallel(true)

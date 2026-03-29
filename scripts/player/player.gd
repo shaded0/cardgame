@@ -1,3 +1,4 @@
+class_name PlayerController
 extends CharacterBody2D
 
 # Stats (will be set by ClassConfig)
@@ -78,9 +79,16 @@ func _on_player_hit(hb: Hitbox) -> void:
 		var kb_dir: Vector2 = (global_position - hb.global_position).normalized()
 		velocity = kb_dir * 300.0
 
-	# Screen shake and sparks on hit
+	# Screen shake, sparks, and flash on hit
 	ScreenFX.shake(self, 6.0, 0.12)
 	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 5, Color(1.0, 0.4, 0.3))
+	ScreenFX.flash(self, Color(1.0, 0.2, 0.1, 0.15), 0.08)
+
+	# Scale punch on hit
+	var punch := create_tween()
+	punch.tween_property(anim_sprite, "scale", Vector2(1.12, 0.88), 0.04)
+	punch.tween_property(anim_sprite, "scale", Vector2(0.95, 1.05), 0.04)
+	punch.tween_property(anim_sprite, "scale", Vector2(1.0, 1.0), 0.04)
 
 	_flash_hurt()
 

@@ -33,17 +33,17 @@ func toggle_pause() -> void:
 	else:
 		game_resumed.emit()
 
-func get_player() -> CharacterBody2D:
-	return _get_first_node_in_group(&"player") as CharacterBody2D
+func get_player() -> PlayerController:
+	return _get_first_node_in_group(&"player") as PlayerController
 
 func get_enemies() -> Array[Node]:
 	return get_tree().get_nodes_in_group(&"enemies")
 
 func go_to_map() -> void:
-	get_tree().change_scene_to_file(MAP_SCENE_PATH)
+	_change_scene(MAP_SCENE_PATH)
 
 func go_to_class_select() -> void:
-	get_tree().change_scene_to_file(CLASS_SELECT_SCENE_PATH)
+	_change_scene(CLASS_SELECT_SCENE_PATH)
 
 func start_new_run() -> void:
 	run_active = true
@@ -101,10 +101,17 @@ func enter_room(room: RoomData) -> void:
 		player_health_carry = -1.0  # Full heal
 		complete_room(room.room_id)
 	else:
-		get_tree().change_scene_to_file(room.arena_scene_path)
+		_change_scene(room.arena_scene_path)
 
 func _get_first_node_in_group(group_name: StringName) -> Node:
 	var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
 	if nodes.is_empty():
 		return null
 	return nodes[0]
+
+func _change_scene(path: String) -> void:
+	var tree := get_tree()
+	if tree.paused:
+		tree.paused = false
+		game_resumed.emit()
+	tree.change_scene_to_file(path)

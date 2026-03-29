@@ -101,7 +101,7 @@ func _show_upgrade_screen() -> void:
 
 		# Current card info
 		var current_label := Label.new()
-		current_label.text = "%s (Cost: %d)" % [card.card_name, card.mana_cost]
+		current_label.text = "%s (Cost: %s)" % [card.card_name, card.get_cost_label()]
 		current_label.add_theme_font_size_override("font_size", 16)
 		current_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 		current_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -117,7 +117,7 @@ func _show_upgrade_screen() -> void:
 		# Upgraded card info
 		var upgraded: CardData = card.upgraded_version
 		var upgrade_label := Label.new()
-		upgrade_label.text = "%s (Cost: %d)" % [upgraded.card_name, upgraded.mana_cost]
+		upgrade_label.text = "%s (Cost: %s)" % [upgraded.card_name, upgraded.get_cost_label()]
 		upgrade_label.add_theme_font_size_override("font_size", 16)
 		upgrade_label.add_theme_color_override("font_color", Color(0.4, 1.0, 0.5))
 		upgrade_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL

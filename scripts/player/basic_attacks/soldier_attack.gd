@@ -2,7 +2,7 @@ extends BaseAttack
 
 ## Melee arc attack — short range, high damage, with visible swing arc.
 
-func execute(player: CharacterBody2D, direction: Vector2) -> void:
+func execute(player: PlayerController, direction: Vector2) -> void:
 	var hitbox: Hitbox = player.get_node_or_null("Hitbox") as Hitbox
 	if hitbox == null:
 		return
@@ -16,7 +16,7 @@ func execute(player: CharacterBody2D, direction: Vector2) -> void:
 
 	_spawn_swing_arc(player, direction)
 
-func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
+func _spawn_swing_arc(player: PlayerController, direction: Vector2) -> void:
 	var parent: Node = player.get_parent()
 	if parent == null or not is_instance_valid(parent):
 		return
@@ -41,7 +41,7 @@ func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
 	tween.tween_property(arc, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(arc.queue_free)
 
-func end_attack(player: CharacterBody2D) -> void:
+func end_attack(player: PlayerController) -> void:
 	var hitbox: Hitbox = player.get_node_or_null("Hitbox") as Hitbox
 	if hitbox == null:
 		return

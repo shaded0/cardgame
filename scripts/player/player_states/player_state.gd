@@ -5,7 +5,7 @@ extends Node
 ## Concrete states override the three lifecycle hooks.
 
 var state_machine: PlayerStateMachine
-var player: CharacterBody2D
+var player: PlayerController
 
 func enter() -> void:
 	pass

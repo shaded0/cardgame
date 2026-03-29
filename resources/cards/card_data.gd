@@ -22,3 +22,6 @@ enum Rarity { COMMON, UNCOMMON, RARE }
 @export var is_x_cost: bool = false      ## Spend ALL mana; effect.value = per-mana multiplier
 @export var upgraded_version: CardData   ## Points to the "+" upgraded version
 @export var is_upgraded: bool = false    ## True on upgraded card variants
+
+func get_cost_label() -> String:
+	return "X" if is_x_cost else str(mana_cost)

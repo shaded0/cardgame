@@ -17,6 +17,7 @@ display_name = "Soldier"
 max_health = 120.0
 move_speed = 360.0
 dodge_speed = 750.0
+dodge_cooldown = 0.8
 dodge_duration = 0.4
 attack_damage = 20.0
 attack_duration = 0.5

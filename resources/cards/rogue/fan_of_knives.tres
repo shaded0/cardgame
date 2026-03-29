@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
 [ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/rogue/fan_of_knives_plus.tres" id="3_upgrade"]
 
 [sub_resource type="Resource" id="effect_1"]
 script = ExtResource("2")
@@ -19,3 +20,4 @@ description = "Throw a fan of knives, hitting all nearby enemies."
 mana_cost = 12
 generates_mana = 0
 effects = Array[Resource]([SubResource("effect_1")])
+upgraded_version = ExtResource("3_upgrade")

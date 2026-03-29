@@ -16,7 +16,7 @@ func _ready() -> void:
 	for child in get_children():
 		states[child.name.to_lower()] = child
 		child.state_machine = self
-		child.player = get_parent()
+		child.player = get_parent() as PlayerController
 	current_state = states.get("idle")
 	if current_state:
 		current_state.enter()

@@ -134,10 +134,7 @@ func _create_card_panel(card: CardData, index: int) -> PanelContainer:
 
 	# Mana cost
 	var cost_label := Label.new()
-	if card.is_x_cost:
-		cost_label.text = "Cost: X"
-	else:
-		cost_label.text = "Cost: %d" % card.mana_cost
+	cost_label.text = "Cost: %s" % card.get_cost_label()
 	cost_label.add_theme_font_size_override("font_size", 16)
 	cost_label.add_theme_color_override("font_color", Color(0.4, 0.7, 1.0))
 	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

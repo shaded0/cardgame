@@ -6,10 +6,10 @@ const PROJECTILE_SPEED: float = 900.0
 const PROJECTILE_RANGE: float = 600.0
 const PROJECTILE_LIFETIME: float = 0.7
 
-func execute(player: CharacterBody2D, direction: Vector2) -> void:
+func execute(player: PlayerController, direction: Vector2) -> void:
 	_spawn_knife(player, direction)
 
-func _spawn_knife(player: CharacterBody2D, direction: Vector2) -> void:
+func _spawn_knife(player: PlayerController, direction: Vector2) -> void:
 	var parent: Node = player.get_parent()
 	if parent == null or not is_instance_valid(parent):
 		return

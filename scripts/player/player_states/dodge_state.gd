@@ -7,10 +7,13 @@ func enter() -> void:
 	player.can_dodge = false
 	player.set_invincible(true)
 
-	# Burst in facing direction
-	var dodge_dir: Vector2 = player.facing_direction
-	if dodge_dir == Vector2.ZERO:
-		dodge_dir = Vector2.RIGHT
+	# Dodge in movement direction if moving, otherwise toward mouse
+	var iso_input: Vector2 = player.get_iso_input()
+	var dodge_dir: Vector2
+	if iso_input != Vector2.ZERO:
+		dodge_dir = iso_input
+	else:
+		dodge_dir = player.get_aim_direction()
 	player.velocity = dodge_dir * player.dodge_speed
 
 	# Visual feedback: semi-transparent during dodge

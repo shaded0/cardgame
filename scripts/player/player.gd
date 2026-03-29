@@ -54,7 +54,18 @@ func _setup_placeholder_sprite() -> void:
 			&"soldier": color = Color.STEEL_BLUE
 			&"rogue": color = Color.MEDIUM_SEA_GREEN
 			&"mage": color = Color.MEDIUM_PURPLE
-	sprite.texture = PlaceholderSprites.create_rect_texture(12, 16, color)
+	# Arrow sprite points upward; we rotate it to face the mouse
+	sprite.texture = PlaceholderSprites.create_arrow_texture(16, color)
+	sprite.offset = Vector2(0, -8)  # Draw above feet position
+
+func _process(_delta: float) -> void:
+	# Always face toward the mouse cursor
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var to_mouse: Vector2 = (mouse_pos - global_position)
+	if to_mouse.length() > 2.0:
+		facing_direction = to_mouse.normalized()
+		# Rotate sprite: arrow texture points up (-Y), so offset by -90 degrees
+		sprite.rotation = facing_direction.angle() + PI / 2.0
 
 func apply_class_config(config: Resource) -> void:
 	move_speed = config.move_speed
@@ -99,24 +110,32 @@ func get_iso_input() -> Vector2:
 	)
 	return iso.normalized()
 
-func update_facing(direction: Vector2) -> void:
-	facing_direction = direction
-	if direction.x < 0:
-		sprite.flip_h = true
-	elif direction.x > 0:
-		sprite.flip_h = false
+func update_facing(_direction: Vector2) -> void:
+	# Facing is now driven by mouse in _process, this is kept for compatibility
+	pass
+
+func get_aim_direction() -> Vector2:
+	## Returns the direction from player toward the mouse cursor.
+	var mouse_pos: Vector2 = get_global_mouse_position()
+	var dir: Vector2 = (mouse_pos - global_position)
+	if dir.length() < 1.0:
+		return facing_direction
+	return dir.normalized()
 
 func start_attack() -> void:
+	# Attack toward mouse cursor
+	var aim: Vector2 = get_aim_direction()
+
 	# Show attack visual
 	if attack_visual:
-		attack_visual.position = facing_direction * 18.0
+		attack_visual.position = aim * 18.0
 		attack_visual.visible = true
 
 	if current_attack and current_attack.has_method("execute"):
-		current_attack.execute(self, facing_direction)
+		current_attack.execute(self, aim)
 	else:
 		hitbox_shape.disabled = false
-		hitbox.position = facing_direction * 20.0
+		hitbox.position = aim * 20.0
 
 func end_attack() -> void:
 	# Hide attack visual

@@ -103,18 +103,21 @@ func _do_attack() -> void:
 func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 	health_component.take_damage(incoming_hitbox.damage)
 
-	# Hit flash (white modulate briefly)
+	# Damage number
+	DamageNumber.spawn(get_parent(), global_position, incoming_hitbox.damage, Color(1.0, 1.0, 1.0))
+
+	# Hit flash
 	modulate = Color(3, 3, 3, 1)
-	var flash_timer: SceneTreeTimer = get_tree().create_timer(0.1)
-	flash_timer.timeout.connect(func(): modulate = Color(1, 1, 1, 1))
+	var flash_timer: SceneTreeTimer = get_tree().create_timer(0.08)
+	flash_timer.timeout.connect(func() -> void: modulate = Color(1, 1, 1, 1))
 
 	# Knockback
 	var knockback_dir: Vector2 = (global_position - incoming_hitbox.global_position).normalized()
-	velocity = knockback_dir * 100.0
+	velocity = knockback_dir * 120.0
 
 	current_state = State.HURT
-	var hurt_timer: SceneTreeTimer = get_tree().create_timer(0.2)
-	hurt_timer.timeout.connect(func():
+	var hurt_timer: SceneTreeTimer = get_tree().create_timer(0.15)
+	hurt_timer.timeout.connect(func() -> void:
 		if current_state != State.DEAD:
 			current_state = State.CHASE
 	)

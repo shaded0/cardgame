@@ -37,11 +37,11 @@ func _connect_to_player() -> void:
 
 	# Connect to card manager signal: hand changes redraw slots immediately.
 	var card_mgr: CardManager = player.get_node("CardManager")
-	card_mgr.hand_updated.connect(_on_hand_updated)
-	card_mgr.draw_pile_changed.connect(_on_draw_pile_changed)
-	card_mgr.deck_reshuffled.connect(_on_deck_reshuffled)
-	card_mgr.card_cycled.connect(_on_card_cycled)
-	card_mgr.card_played.connect(_on_card_played_synergy)
+	card_mgr.hand_updated.connect(Callable(self, "_on_hand_updated"))
+	card_mgr.draw_pile_changed.connect(Callable(self, "_on_draw_pile_changed"))
+	card_mgr.deck_reshuffled.connect(Callable(self, "_on_deck_reshuffled"))
+	card_mgr.card_cycled.connect(Callable(self, "_on_card_cycled"))
+	card_mgr.card_played.connect(Callable(self, "_on_card_played_synergy"))
 
 	# Initialize references to each slot and show matching hotkey hints (1-4).
 	card_slots = card_hand.get_children()

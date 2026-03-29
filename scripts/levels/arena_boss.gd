@@ -10,6 +10,7 @@ func _ready() -> void:
 	enemies_to_spawn = max(enemies_to_spawn, 1)
 	super._ready()
 	_place_obstacles()
+	_spawn_random_grass(12)
 
 func _pick_enemy_data() -> EnemyData:
 	return golem_data

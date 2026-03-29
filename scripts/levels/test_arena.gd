@@ -14,6 +14,7 @@ func _ready() -> void:
 	restore_carried_health = false
 	room_clear_enabled = false
 	super._ready()
+	_spawn_random_grass(8)
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)

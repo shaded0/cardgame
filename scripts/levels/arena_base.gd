@@ -24,11 +24,18 @@ var room_clear_enabled: bool = true
 
 var _vignette_shader: Shader = preload("res://shaders/vignette.gdshader")
 
+## Room-type color tints for ambient lighting variation.
+var _ambient_tint: Color = Color(0.55, 0.5, 0.65)
+var _floor_hue_shift: Color = Color(1.0, 1.0, 1.0)
+
 func _ready() -> void:
+	_pick_room_palette()
 	queue_redraw()
 	_configure_from_current_room()
 	_setup_vignette()
+	_setup_lighting()
 	_spawn_ambient_particles()
+	_spawn_floor_decals()
 
 	if spawn_initial_wave:
 		# Spawn enemies after a brief delay so the scene is fully assembled first.

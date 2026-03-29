@@ -47,6 +47,7 @@ var _attack_elapsed: float = 0.0
 @onready var state_machine: PlayerStateMachine = $StateMachine
 
 func _ready() -> void:
+	_refresh_combat_refs()
 	# Start with disabled melee hitbox; each attack enables it on demand.
 	hitbox_shape.disabled = true
 
@@ -59,9 +60,8 @@ func _ready() -> void:
 	attack_visual.z_index = -1
 	add_child(attack_visual)
 
-	# Wire mana generation signals
-	hitbox.hit_landed.connect(_on_attack_hit)
-	hurtbox.received_hit.connect(_on_player_hit)
+	# Wire combat signals
+	_bind_combat_signals()
 
 	# Initialize with class config if available
 	var config: ClassConfig = GameManager.current_class_config
@@ -228,6 +228,8 @@ func get_effective_damage() -> float:
 	return attack_damage
 
 func start_attack() -> bool:
+	_refresh_combat_refs()
+	_bind_combat_signals()
 	var aim: Vector2 = get_aim_direction()
 	play_anim(&"attack")
 	_attack_active = true
@@ -358,6 +360,7 @@ func _rebuild_attack_controller(attack_script: Script) -> Node:
 	return current_attack
 
 func _disable_attack_hitbox() -> void:
+	_refresh_combat_refs()
 	if is_instance_valid(hitbox_shape):
 		hitbox_shape.set_deferred("disabled", true)
 	if is_instance_valid(hitbox):
@@ -367,6 +370,7 @@ func disable_attack_hitbox() -> void:
 	_disable_attack_hitbox()
 
 func enable_attack_hitbox(offset: Vector2, damage: float = -1.0) -> bool:
+	_refresh_combat_refs()
 	if not is_instance_valid(hitbox) or not is_instance_valid(hitbox_shape):
 		return false
 	if damage >= 0.0:
@@ -374,6 +378,32 @@ func enable_attack_hitbox(offset: Vector2, damage: float = -1.0) -> bool:
 	hitbox.position = offset
 	hitbox_shape.set_deferred("disabled", false)
 	return true
+
+func _refresh_combat_refs() -> void:
+	if not is_instance_valid(hitbox):
+		hitbox = get_node_or_null("Hitbox") as Hitbox
+	if not is_instance_valid(hurtbox):
+		hurtbox = get_node_or_null("Hurtbox") as Hurtbox
+	if not is_instance_valid(anim_sprite):
+		anim_sprite = get_node_or_null("AnimatedSprite") as AnimatedSprite2D
+	if not is_instance_valid(hitbox_shape):
+		hitbox_shape = get_node_or_null("Hitbox/CollisionShape2D") as CollisionShape2D
+	if not is_instance_valid(health_component):
+		health_component = get_node_or_null("HealthComponent") as HealthComponent
+	if not is_instance_valid(mana_component):
+		mana_component = get_node_or_null("ManaComponent") as ManaComponent
+	if not is_instance_valid(card_manager):
+		card_manager = get_node_or_null("CardManager") as CardManager
+	if not is_instance_valid(buff_system):
+		buff_system = get_node_or_null("BuffSystem") as BuffSystem
+	if not is_instance_valid(state_machine):
+		state_machine = get_node_or_null("StateMachine") as PlayerStateMachine
+
+func _bind_combat_signals() -> void:
+	if is_instance_valid(hitbox) and not hitbox.hit_landed.is_connected(_on_attack_hit):
+		hitbox.hit_landed.connect(_on_attack_hit)
+	if is_instance_valid(hurtbox) and not hurtbox.received_hit.is_connected(_on_player_hit):
+		hurtbox.received_hit.connect(_on_player_hit)
 
 func clear_tracked_fx(fx_tag: String = "") -> void:
 	var parent := get_parent()

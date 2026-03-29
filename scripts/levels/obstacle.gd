@@ -1,6 +1,8 @@
 class_name Obstacle
 extends StaticBody2D
 
+const PickupScript = preload("res://scripts/levels/pickup.gd")
+
 ## Arena obstacle — blocks movement and projectiles.
 ## Crates are destructible; pillars/walls react to hits but don't break.
 ## Call setup() after instancing to set type and size.
@@ -81,7 +83,7 @@ func setup(type: ObstacleType, pos: Vector2) -> void:
 	# Hurtbox so melee attacks can interact with obstacles
 	var hurtbox := Hurtbox.new()
 	hurtbox.iframes_duration = 0.0  # No i-frames on environment objects
-	hurtbox.collision_layer = 2  # Enemies layer so player hitbox (mask 2) detects it
+	hurtbox.collision_layer = 32  # Same as enemy hurtboxes so player hitbox (mask 32) detects it
 	hurtbox.collision_mask = 0
 	var hurtbox_shape := CollisionShape2D.new()
 	hurtbox_shape.shape = shape.shape.duplicate()
@@ -92,6 +94,9 @@ func setup(type: ObstacleType, pos: Vector2) -> void:
 func _on_projectile_hit(area: Area2D) -> void:
 	if area is Hurtbox:
 		return  # It's a hurtbox, not a projectile
+	if area is Hitbox and area.get_parent() is CharacterBody2D:
+		# Character melee hitboxes use the dedicated hurtbox path and should never be deleted here.
+		return
 	_react_to_hit(area.global_position)
 
 	if destructible:
@@ -186,7 +191,9 @@ func _spawn_drops(parent: Node, pos: Vector2) -> void:
 	var drop_count := randi_range(1, 3)
 	for i in range(drop_count):
 		var is_health: bool = randf() < 0.4  # 40% health, 60% mana
-		var pickup := Pickup.new()
+		var pickup: Pickup = PickupScript.new() as Pickup
+		if pickup == null:
+			continue
 		pickup.setup(Pickup.PickupType.HEALTH if is_health else Pickup.PickupType.MANA, pos)
 		parent.add_child(pickup)
 

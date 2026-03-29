@@ -7,7 +7,7 @@ var _was_moving: bool = false
 var _prev_dir: Vector2 = Vector2.ZERO
 
 func enter() -> void:
-	player.play_anim(&"run")
+	player.play_anim(&"walk")
 	_was_moving = player.velocity.length() > 10.0
 	_prev_dir = player.velocity.normalized()
 	# Subtle stretch on movement start + dust kick

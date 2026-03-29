@@ -45,6 +45,18 @@ static func create_humanoid_frames(body_color: Color, detail_color: Color, weapo
 		var tex: Texture2D = _draw_humanoid_frame(48, body_color, detail_color, weapon, bob, 0.0, 0.0)
 		frames.add_frame(&"idle", tex)
 
+	# walk: 6 frames, gentle stride (slower, smaller motion than run)
+	frames.add_animation(&"walk")
+	frames.set_animation_speed(&"walk", 6.0)
+	frames.set_animation_loop(&"walk", true)
+	for i in range(6):
+		var phase: float = float(i) / 6.0 * TAU
+		var leg_offset: float = sin(phase) * 2.0
+		var arm_offset: float = sin(phase + PI) * 1.5
+		var bob: float = absf(sin(phase)) * -1.0
+		var tex: Texture2D = _draw_humanoid_frame(48, body_color, detail_color, weapon, bob, leg_offset, arm_offset)
+		frames.add_frame(&"walk", tex)
+
 	# run: 6 frames, leg stride + arm pump
 	frames.add_animation(&"run")
 	frames.set_animation_speed(&"run", 10.0)

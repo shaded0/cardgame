@@ -13,7 +13,7 @@ var chase_range: float = 200.0
 var can_attack: bool = true
 var player: CharacterBody2D = null
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
 @onready var hitbox: Area2D = $Hitbox
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var health_component: HealthComponent = $HealthComponent
@@ -23,9 +23,10 @@ func _ready() -> void:
 	add_to_group("enemies")
 	hitbox_shape.disabled = true
 
-	# Enemy sprite
-	sprite.texture = PlaceholderSprites.create_enemy_texture(48, Color(0.4, 0.8, 0.3, 1.0), "slime")
-	sprite.offset = Vector2(0, -18)
+	# Animated slime sprite
+	anim_sprite.sprite_frames = SpriteAnimator.create_slime_frames(Color(0.4, 0.8, 0.3, 1.0))
+	anim_sprite.offset = Vector2(0, -18)
+	anim_sprite.play(&"idle")
 
 	if enemy_data:
 		move_speed = enemy_data.move_speed
@@ -57,9 +58,11 @@ func _physics_process(delta: float) -> void:
 
 	match current_state:
 		State.IDLE:
+			_play_anim(&"idle")
 			if distance <= chase_range:
 				current_state = State.CHASE
 		State.CHASE:
+			_play_anim(&"run")
 			_chase_player(delta)
 			if distance <= attack_range and can_attack:
 				current_state = State.ATTACK
@@ -68,16 +71,21 @@ func _physics_process(delta: float) -> void:
 				current_state = State.IDLE
 				velocity = Vector2.ZERO
 		State.ATTACK:
-			pass  # Handled by timer
+			pass
 		State.HURT:
-			pass  # Handled by timer
+			pass
+
+func _play_anim(anim_name: StringName) -> void:
+	if anim_sprite.animation != anim_name:
+		if anim_sprite.sprite_frames.has_animation(anim_name):
+			anim_sprite.play(anim_name)
 
 func _chase_player(_delta: float) -> void:
 	var direction: Vector2 = (player.global_position - global_position).normalized()
 	velocity = direction * move_speed
 
-	# Rotate sprite to face player (arrow points up, offset by 90 deg)
-	sprite.rotation = direction.angle() + PI / 2.0
+	# Rotate sprite to face player
+	anim_sprite.rotation = direction.angle() + PI / 2.0
 
 	move_and_slide()
 
@@ -85,31 +93,27 @@ func _do_attack() -> void:
 	can_attack = false
 	hitbox_shape.disabled = false
 	hitbox.position = (player.global_position - global_position).normalized() * 36.0
+	_play_anim(&"attack")
 
-	# Attack duration
 	var timer: SceneTreeTimer = get_tree().create_timer(0.3)
-	timer.timeout.connect(func():
+	timer.timeout.connect(func() -> void:
 		hitbox_shape.disabled = true
 		hitbox.position = Vector2.ZERO
 		current_state = State.CHASE
 
-		# Cooldown
 		var cd: SceneTreeTimer = get_tree().create_timer(attack_cooldown)
-		cd.timeout.connect(func(): can_attack = true)
+		cd.timeout.connect(func() -> void: can_attack = true)
 	)
 
 func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 	health_component.take_damage(incoming_hitbox.damage)
 
-	# Damage number
 	DamageNumber.spawn(get_parent(), global_position, incoming_hitbox.damage, Color(1.0, 1.0, 1.0))
 
-	# Hit flash
 	modulate = Color(3, 3, 3, 1)
 	var flash_timer: SceneTreeTimer = get_tree().create_timer(0.08)
 	flash_timer.timeout.connect(func() -> void: modulate = Color(1, 1, 1, 1))
 
-	# Knockback
 	var knockback_dir: Vector2 = (global_position - incoming_hitbox.global_position).normalized()
 	velocity = knockback_dir * 360.0
 
@@ -122,7 +126,6 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 
 func _on_died() -> void:
 	current_state = State.DEAD
-	# Death animation: fade out and remove
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(queue_free)

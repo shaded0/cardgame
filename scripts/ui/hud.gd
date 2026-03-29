@@ -1,14 +1,17 @@
 extends Control
 
+## Player HUD container.
+## Wires health/mana bars and card slots to player components and updates UI in real-time.
+
 @onready var health_bar: ProgressBar = $HealthBar
 @onready var mana_bar: ProgressBar = $ManaBar
 @onready var card_hand: HBoxContainer = $CardHand
 var card_slots: Array = []
 
 func _ready() -> void:
-	# HUD must update even while paused (card playability, mana changes)
+	# HUD needs to refresh while paused so card availability still updates.
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	# Wait a frame for player to initialize
+	# Wait one frame so the player node has had a chance to finish _ready().
 	await get_tree().process_frame
 	_connect_to_player()
 
@@ -18,23 +21,23 @@ func _connect_to_player() -> void:
 		push_warning("HUD: Player not found")
 		return
 
-	# Connect health
+	# Connect to player's health component signal: UI updates whenever health changes.
 	var health: HealthComponent = player.get_node("HealthComponent")
 	health.health_changed.connect(_on_health_changed)
 	health_bar.max_value = health.max_health
 	health_bar.value = health.current_health
 
-	# Connect mana
+	# Connect to player's mana component signal: UI updates on regen/spend.
 	var mana: ManaComponent = player.get_node("ManaComponent")
 	mana.mana_changed.connect(_on_mana_changed)
 	mana_bar.max_value = mana.max_mana
 	mana_bar.value = mana.current_mana
 
-	# Connect card hand
+	# Connect to card manager signal: hand changes redraw slots immediately.
 	var card_mgr: CardManager = player.get_node("CardManager")
 	card_mgr.hand_updated.connect(_on_hand_updated)
 
-	# Initialize card slots and assign indices
+	# Initialize references to each slot and show matching hotkey hints (1-4).
 	card_slots = card_hand.get_children()
 	for i in range(card_slots.size()):
 		card_slots[i].slot_index = i
@@ -62,6 +65,7 @@ func _on_mana_changed(current: float, maximum: float) -> void:
 	mana_bar.value = current
 
 func _on_hand_updated(hand: Array) -> void:
+	# Populate or clear each slot based on current hand count.
 	for i in range(card_slots.size()):
 		var slot = card_slots[i]
 		if i < hand.size() and hand[i] != null:
@@ -73,6 +77,7 @@ func _on_hand_updated(hand: Array) -> void:
 	_update_card_playability()
 
 func _update_card_playability() -> void:
+	# Re-query player each call so the UI reflects fresh mana and deck state.
 	var player: CharacterBody2D = _find_player()
 	if player == null:
 		return

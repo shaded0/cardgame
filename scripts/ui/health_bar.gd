@@ -1,6 +1,9 @@
 extends ProgressBar
 
+## Simple style setup for the health bar.
+## Keeping UI styling in script means these bars look consistent across scenes.
 func _ready() -> void:
+	# Fill stays red; background is darker to improve contrast.
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.85, 0.15, 0.15, 1.0)
 	style.corner_radius_top_right = 1

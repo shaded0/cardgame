@@ -2,10 +2,13 @@ class_name SpriteAnimator
 extends RefCounted
 
 ## Generates SpriteFrames with multiple animation states for humanoid and enemy characters.
+## This keeps art data generated at runtime during prototyping.
 
 # ─── drawing helpers (shared by all generators) ───
+## Low-level shape primitives for building textures without imported sprites.
 
 static func _fill_circle(img: Image, cx: float, cy: float, r: float, col: Color) -> void:
+	# Scan a local pixel window and paint all points inside a radius.
 	for dy in range(int(-r) - 1, int(r) + 2):
 		for dx in range(int(-r) - 1, int(r) + 2):
 			var px: int = int(cx) + dx
@@ -15,6 +18,7 @@ static func _fill_circle(img: Image, cx: float, cy: float, r: float, col: Color)
 					img.set_pixel(px, py, col)
 
 static func _fill_rect(img: Image, rx: float, ry: float, rw: float, rh: float, col: Color) -> void:
+	# Fill a rectangular area by iterating image coordinates.
 	for dy in range(int(rh)):
 		for dx in range(int(rw)):
 			var px: int = int(rx) + dx
@@ -25,6 +29,7 @@ static func _fill_rect(img: Image, rx: float, ry: float, rw: float, rh: float, c
 # ─── humanoid sprite frames ───
 
 static func create_humanoid_frames(body_color: Color, detail_color: Color, weapon: String = "sword") -> SpriteFrames:
+	# Public factory for player-like characters. Returns a full SpriteFrames object.
 	var frames := SpriteFrames.new()
 
 	# Remove the default animation
@@ -73,6 +78,7 @@ static func create_humanoid_frames(body_color: Color, detail_color: Color, weapo
 	return frames
 
 static func _draw_humanoid_frame(size: int, body_color: Color, detail_color: Color, weapon: String, bob: float, leg_offset: float, arm_offset: float) -> Texture2D:
+	# Builds one animation frame for idle/run by composing simple body/limb shapes.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0
@@ -117,6 +123,7 @@ static func _draw_humanoid_frame(size: int, body_color: Color, detail_color: Col
 	return ImageTexture.create_from_image(image)
 
 static func _draw_humanoid_attack_frame(size: int, body_color: Color, detail_color: Color, weapon: String, swing: float) -> Texture2D:
+	# Build a single attack-frame where weapon and torso lean based on `swing`.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0
@@ -165,6 +172,7 @@ static func _draw_humanoid_attack_frame(size: int, body_color: Color, detail_col
 	return ImageTexture.create_from_image(image)
 
 static func _draw_humanoid_dodge_frame(size: int, body_color: Color, detail_color: Color, squash: float) -> Texture2D:
+	# Build one dodge-frame with compacted posture and motion lines.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0
@@ -201,6 +209,7 @@ static func _draw_humanoid_dodge_frame(size: int, body_color: Color, detail_colo
 	return ImageTexture.create_from_image(image)
 
 static func _draw_weapon(img: Image, cx: float, cy: float, s: float, bob: float, weapon: String) -> void:
+	# Weapon-specific pose so the same character can visually change by class.
 	match weapon:
 		"sword":
 			var blade := Color(0.8, 0.85, 0.9, 1.0)
@@ -222,6 +231,7 @@ static func _draw_weapon(img: Image, cx: float, cy: float, s: float, bob: float,
 			_fill_circle(img, cx + 11 * s, cy - 17 * s + bob, 1.5 * s, orb.lightened(0.3))
 
 static func _draw_weapon_attack(img: Image, cx: float, cy: float, s: float, lean: float, arm_ext: float, weapon: String, swing: float) -> void:
+	# Attack variant where weapon extends and rotates differently per class weapon type.
 	match weapon:
 		"sword":
 			var blade := Color(0.8, 0.85, 0.9, 1.0)
@@ -244,6 +254,7 @@ static func _draw_weapon_attack(img: Image, cx: float, cy: float, s: float, lean
 # ─── enemy sprite frames ───
 
 static func create_slime_frames(body_color: Color) -> SpriteFrames:
+	# Public factory for slime enemy animation states.
 	var frames := SpriteFrames.new()
 	if frames.has_animation(&"default"):
 		frames.remove_animation(&"default")
@@ -283,6 +294,7 @@ static func create_slime_frames(body_color: Color) -> SpriteFrames:
 	return frames
 
 static func _draw_slime_frame(size: int, body_color: Color, light: Color, dark: Color, squish: float, y_offset: float) -> Texture2D:
+	# Creates one blob-like frame with squash/stretch animation parameters.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0 + y_offset

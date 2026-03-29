@@ -1,9 +1,11 @@
 extends Node2D
 
-## Test arena setup script — draws a placeholder floor and spawns enemies.
+## Test arena setup script.
+## Draws a debug isometric-style floor and handles simple timed enemy spawning bounds.
 
 @onready var entity_layer: Node2D = $EntityLayer
 
+## Preloaded scene/data keeps this test arena easy to reskin later.
 var enemy_scene: PackedScene = preload("res://scenes/enemies/base_enemy.tscn")
 var slime_data: Resource = preload("res://resources/enemy_data/slime_data.tres")
 
@@ -17,9 +19,11 @@ var time_since_spawn: float = 1.0
 const ARENA_RADIUS: float = 520.0
 
 func _ready() -> void:
+	# Request a redraw at startup so floor tiles render immediately.
 	queue_redraw()
 
 func _draw() -> void:
+	# `_draw()` is called by queue_redraw(); we use procedural geometry instead of a tilemap.
 	# Dark background
 	draw_rect(Rect2(-2000, -1500, 4000, 3000), Color(0.06, 0.06, 0.08, 1.0))
 
@@ -63,6 +67,7 @@ func _draw() -> void:
 			]), line_color, 1.0)
 
 func _physics_process(delta: float) -> void:
+	# Spawn timer is tracked in physics time so spawn rhythm is stable.
 	time_since_spawn -= delta
 	if time_since_spawn <= 0.0:
 		time_since_spawn = spawn_timer

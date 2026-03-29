@@ -2,8 +2,10 @@ class_name SpellEffectVisual
 extends Node2D
 
 ## Visual flash/burst for card spell effects.
+## This file is a static helper: it creates lightweight effect nodes and cleans them automatically.
 
 static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color, duration: float = 0.3) -> void:
+	# Create a temporary node so effect lifetime is isolated from player/enemy nodes.
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos
 	effect.z_index = 5
@@ -22,6 +24,7 @@ static func spawn_burst(parent: Node, pos: Vector2, radius: float, color: Color,
 	tween.chain().tween_callback(effect.queue_free)
 
 static func spawn_slash(parent: Node, pos: Vector2, direction: Vector2, color: Color) -> void:
+	# Use a line drawn perpendicular to attack direction as a quick slash indicator.
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos
 	effect.z_index = 5
@@ -44,6 +47,7 @@ static func spawn_slash(parent: Node, pos: Vector2, direction: Vector2, color: C
 	tween.chain().tween_callback(effect.queue_free)
 
 static func spawn_heal(parent: Node, pos: Vector2) -> void:
+	# Tiny plus sign that drifts upward for readability.
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos
 	effect.z_index = 5
@@ -72,6 +76,7 @@ static func spawn_heal(parent: Node, pos: Vector2) -> void:
 	tween.chain().tween_callback(effect.queue_free)
 
 static func spawn_shield(parent: Node, pos: Vector2, color: Color = Color(0.4, 0.6, 1.0, 0.5)) -> void:
+	# Use fade-in then fade-out ring/sphere to signal temporary shield uptime.
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos
 	effect.z_index = 4
@@ -90,6 +95,7 @@ static func spawn_shield(parent: Node, pos: Vector2, color: Color = Color(0.4, 0
 	tween.tween_callback(effect.queue_free)
 
 static func spawn_mana_gain(parent: Node, pos: Vector2) -> void:
+	# Spawn small blue dots that rise, giving instant confirmation of mana gain.
 	var effect := SpellEffectVisual.new()
 	effect.global_position = pos + Vector2(0, -24)
 	effect.z_index = 5

@@ -1,6 +1,9 @@
 extends ProgressBar
 
+## Simple style setup for a mana bar.
+## Using an override in code keeps a readable, reusable look even without editor theme assets.
 func _ready() -> void:
+	# Make the fill bright blue and keep a dark transparent background.
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.2, 0.4, 0.9, 1.0)
 	style.corner_radius_top_right = 1

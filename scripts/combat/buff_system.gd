@@ -2,6 +2,7 @@ class_name BuffSystem
 extends Node
 
 ## Manages active buffs on the player: stat modifiers, empowered attacks, damage reduction, etc.
+## Buff objects are plain data (`Buff`) with lifecycle managed here each frame.
 
 signal buff_applied(buff: Buff)
 signal buff_expired(buff: Buff)
@@ -17,11 +18,12 @@ var empowered_attacks: int = 0  # Next N attacks deal bonus damage
 var empower_bonus: float = 0.0
 
 func _ready() -> void:
+	# Inherit means this node follows parent pause/process behavior by default.
 	process_mode = Node.PROCESS_MODE_INHERIT
 	player = get_parent() as CharacterBody2D
 
 func _process(delta: float) -> void:
-	# Tick down timed buffs
+	# Tick down timed buffs each frame and collect those with expired durations.
 	var expired: Array[Buff] = []
 	for buff in active_buffs:
 		if buff.duration > 0.0:
@@ -33,6 +35,7 @@ func _process(delta: float) -> void:
 		remove_buff(buff)
 
 func add_buff(buff: Buff) -> void:
+	# Add and apply immediately so effects take effect same frame.
 	active_buffs.append(buff)
 	_apply_buff_stats(buff)
 	buff_applied.emit(buff)
@@ -42,12 +45,14 @@ func add_buff(buff: Buff) -> void:
 		_show_buff_visual(buff)
 
 func remove_buff(buff: Buff) -> void:
+	# Remove from both list and applied stats for clean stat rollback.
 	if buff in active_buffs:
 		active_buffs.erase(buff)
 		_remove_buff_stats(buff)
 		buff_expired.emit(buff)
 
 func _apply_buff_stats(buff: Buff) -> void:
+	# Centralized stat mutation by type keeps stacking behavior explicit.
 	match buff.type:
 		Buff.Type.DAMAGE_UP:
 			bonus_damage += buff.value
@@ -66,6 +71,7 @@ func _apply_buff_stats(buff: Buff) -> void:
 				player.dodge_cooldown = max(0.2, player.dodge_cooldown - 0.2)
 
 func _remove_buff_stats(buff: Buff) -> void:
+	# Reverse operations from _apply_buff_stats so values stay numerically stable.
 	match buff.type:
 		Buff.Type.DAMAGE_UP:
 			bonus_damage -= buff.value
@@ -83,6 +89,7 @@ func _remove_buff_stats(buff: Buff) -> void:
 				player.dodge_cooldown += 0.2
 
 func get_modified_damage(base_damage: float) -> float:
+	# Consume one empowered stack if available and apply temporary bonus damage.
 	var total: float = base_damage + bonus_damage
 	if empowered_attacks > 0:
 		total += empower_bonus
@@ -92,15 +99,18 @@ func get_modified_damage(base_damage: float) -> float:
 	return total
 
 func get_damage_after_reduction(incoming: float) -> float:
+	# Simple multiplicative reduction. E.g. 0.25 => reduce by 25%.
 	return incoming * (1.0 - damage_reduction)
 
 func has_buff_type(type: Buff.Type) -> bool:
+	# Useful for UI/logic checks without exposing internal array.
 	for buff in active_buffs:
 		if buff.type == type:
 			return true
 	return false
 
 func _show_buff_visual(buff: Buff) -> void:
+	# Small temporary burst gives immediate user feedback when a buff is granted.
 	var color: Color
 	match buff.type:
 		Buff.Type.DAMAGE_UP: color = Color(1.0, 0.4, 0.2, 0.5)

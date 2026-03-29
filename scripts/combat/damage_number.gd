@@ -2,12 +2,14 @@ class_name DamageNumber
 extends Node2D
 
 ## Floating damage number that drifts up and fades out.
+## Spawned for both damage and heal events.
 
 var text: String = ""
 var color: Color = Color.WHITE
 var font_size: int = 20
 
 func _ready() -> void:
+	# Create and style a label from code so each value can be customized.
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
@@ -24,6 +26,7 @@ func _ready() -> void:
 	tween.chain().tween_callback(queue_free)
 
 static func spawn(parent: Node, pos: Vector2, value: float, col: Color = Color.WHITE) -> void:
+	# Factory helper so all gameplay code can call `spawn()` uniformly.
 	var num := DamageNumber.new()
 	num.text = str(int(value))
 	num.color = col

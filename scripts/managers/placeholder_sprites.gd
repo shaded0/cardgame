@@ -2,13 +2,16 @@ class_name PlaceholderSprites
 extends RefCounted
 
 ## Generates placeholder textures for prototyping.
+## These helpers build textures from math at runtime so you can iterate quickly before art exists.
 
 static func create_rect_texture(width: int, height: int, color: Color) -> ImageTexture:
+	# Core utility for quick solid color blocks.
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
 	image.fill(color)
 	return ImageTexture.create_from_image(image)
 
 static func create_circle_texture(radius: int, color: Color) -> ImageTexture:
+	# Draw a circular sprite by setting pixels manually (simple and dependency-free).
 	var size := radius * 2
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var center := Vector2(radius, radius)
@@ -21,6 +24,7 @@ static func create_circle_texture(radius: int, color: Color) -> ImageTexture:
 static func create_humanoid_texture(size: int, body_color: Color, detail_color: Color, weapon_type: String = "sword") -> ImageTexture:
 	## Creates a top-down humanoid sprite facing upward.
 	## weapon_type: "sword", "daggers", "staff"
+	## This function builds a tiny pixel-art-like stick body in-place so artists can replace later.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0
@@ -116,6 +120,7 @@ static func create_humanoid_texture(size: int, body_color: Color, detail_color: 
 
 static func create_enemy_texture(size: int, body_color: Color, enemy_type: String = "slime") -> ImageTexture:
 	## Creates a top-down enemy sprite.
+	## Enemy visuals are generated here so gameplay can test before final art is ready.
 	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
 	var cx: float = size / 2.0
 	var cy: float = size / 2.0
@@ -158,6 +163,7 @@ static func create_enemy_texture(size: int, body_color: Color, enemy_type: Strin
 	return ImageTexture.create_from_image(image)
 
 static func create_diamond_texture(width: int, height: int, color: Color) -> ImageTexture:
+	# Use Manhattan distance to fill a neat diamond tile shape (for floor/pathing debug art).
 	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
 	var cx := width / 2.0
 	var cy := height / 2.0

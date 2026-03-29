@@ -1,33 +1,43 @@
 extends Control
 
-## Pause menu — visible when game is paused.
-## Cards can be played while paused using number keys.
+## PauseMenu is always loaded from the HUD as an overlay.
+## It listens to GameManager pause state signals and lets players queue/inspect cards while paused.
 
+## UI nodes referenced from the scene tree.
+## `@onready` guarantees these paths are resolved after the node enters the scene.
 @onready var card_details: VBoxContainer = $Panel/VBoxContainer/CardDetails
 @onready var resume_btn: Button = $Panel/VBoxContainer/ResumeButton
 @onready var quit_btn: Button = $Panel/VBoxContainer/QuitButton
 
 func _ready() -> void:
+	# While paused, regular physics still stops but this UI remains active.
 	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	visible = false
+
+	# Wire button clicks to handlers.
 	resume_btn.pressed.connect(_on_resume)
 	quit_btn.pressed.connect(_on_quit)
 
+	# React to global pause events emitted by GameManager.
 	GameManager.game_paused.connect(_on_game_paused)
 	GameManager.game_resumed.connect(_on_game_resumed)
 
 func _on_game_paused() -> void:
+	# Build the card list each time pause opens because hand can change.
 	visible = true
 	_populate_card_details()
 	resume_btn.grab_focus()
 
 func _on_game_resumed() -> void:
+	# Hide only; HUD will stay updated by its own manager signals.
 	visible = false
 
 func _populate_card_details() -> void:
+	# Clear old rows so each pause state is freshly rendered.
 	for child in card_details.get_children():
 		child.queue_free()
 
+	# Look up the player by group (faster than hardcoding scene paths).
 	var players: Array[Node] = get_tree().get_nodes_in_group("player")
 	if players.size() == 0:
 		return
@@ -43,6 +53,7 @@ func _populate_card_details() -> void:
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card_details.add_child(hint)
 
+	# Create one label per card slot and color it based on affordability.
 	for i in range(card_mgr.hand.size()):
 		var card: Resource = card_mgr.hand[i]
 		if card == null:
@@ -65,8 +76,10 @@ func _populate_card_details() -> void:
 		card_details.add_child(label)
 
 func _on_resume() -> void:
+	# Delegate actual pause state changes to centralized game manager.
 	GameManager.toggle_pause()
 
 func _on_quit() -> void:
+	# Exiting pause before changing scene avoids getting stuck in paused game state.
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/ui/class_select.tscn")

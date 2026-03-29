@@ -2,6 +2,7 @@ class_name Buff
 extends RefCounted
 
 ## Data for a single active buff.
+## Use `create()` to build immutable-like instances with runtime duration.
 
 enum Type {
 	DAMAGE_UP,     ## Flat bonus damage on basic attacks
@@ -18,6 +19,7 @@ var remaining: float   ## Time left
 var stacks: int = 1    ## For EMPOWER_NEXT: number of empowered attacks
 
 static func create(p_type: Type, p_value: float, p_duration: float, p_stacks: int = 1) -> Buff:
+	# Builder-style constructor for cleaner effect definitions in code.
 	var b := Buff.new()
 	b.type = p_type
 	b.value = p_value

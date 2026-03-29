@@ -2,8 +2,12 @@ extends CharacterBody2D
 
 enum State { IDLE, CHASE, ATTACK, HURT, DEAD }
 
+## Base enemy controller used by spawn system.
+## Uses a small state machine and shared animation/health/hitbox components.
+
 @export var enemy_data: Resource  # EnemyData
 
+## Runtime state + tunables copied from EnemyData at `_ready()`.
 var current_state: State = State.IDLE
 var move_speed: float = 60.0
 var attack_damage: float = 8.0
@@ -20,10 +24,13 @@ var player: CharacterBody2D = null
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 
 func _ready() -> void:
+	# Keep all enemies in a queryable group for UI/spell targeting.
 	add_to_group("enemies")
+
+	# Hitbox starts disabled; it is enabled only during attack frames.
 	hitbox_shape.disabled = true
 
-	# Animated slime sprite
+	# Build runtime sprite from code; no dependency on imported `.png` atlases.
 	anim_sprite.sprite_frames = SpriteAnimator.create_slime_frames(Color(0.4, 0.8, 0.3, 1.0))
 	anim_sprite.offset = Vector2(0, -18)
 	anim_sprite.play(&"idle")
@@ -38,10 +45,10 @@ func _ready() -> void:
 		health_component.current_health = enemy_data.max_health
 		hitbox.damage = attack_damage
 
-	health_component.died.connect(_on_died)
-	hurtbox.received_hit.connect(_on_received_hit)
+		health_component.died.connect(_on_died)
+		hurtbox.received_hit.connect(_on_received_hit)
 
-	# Find player
+	# Resolve player reference one frame later, after player node is fully ready.
 	await get_tree().process_frame
 	var players: Array[Node] = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
@@ -56,6 +63,7 @@ func _physics_process(delta: float) -> void:
 
 	var distance: float = global_position.distance_to(player.global_position)
 
+	# Finite state machine for simple behavior.
 	match current_state:
 		State.IDLE:
 			_play_anim(&"idle")
@@ -76,6 +84,7 @@ func _physics_process(delta: float) -> void:
 			pass
 
 func _play_anim(anim_name: StringName) -> void:
+	# Guard avoids restarting same animation every frame.
 	if anim_sprite.animation != anim_name:
 		if anim_sprite.sprite_frames.has_animation(anim_name):
 			anim_sprite.play(anim_name)
@@ -90,6 +99,7 @@ func _chase_player(_delta: float) -> void:
 	move_and_slide()
 
 func _do_attack() -> void:
+	# Temporarily enable enemy hitbox during the attack strike window.
 	can_attack = false
 	hitbox_shape.disabled = false
 	hitbox.position = (player.global_position - global_position).normalized() * 36.0
@@ -106,8 +116,10 @@ func _do_attack() -> void:
 	)
 
 func _on_received_hit(incoming_hitbox: Hitbox) -> void:
+	# Apply health changes from hitbox.
 	health_component.take_damage(incoming_hitbox.damage)
 
+	# Floating number + white flash gives clear feedback.
 	DamageNumber.spawn(get_parent(), global_position, incoming_hitbox.damage, Color(1.0, 1.0, 1.0))
 
 	modulate = Color(3, 3, 3, 1)

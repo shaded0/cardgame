@@ -23,6 +23,9 @@ func enter() -> void:
 	# Visual feedback: semi-transparent during dodge
 	player.modulate.a = 0.5
 
+	# Spawn afterimage ghosts
+	_spawn_afterimages()
+
 func physics_update(delta: float) -> void:
 	# Keep moving during dodge then slow to stop.
 	player.move_and_slide()
@@ -39,6 +42,40 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("move")
 		else:
 			state_machine.transition_to("idle")
+
+func _spawn_afterimages() -> void:
+	var parent := player.get_parent()
+	if parent == null:
+		return
+
+	for i in range(3):
+		# Stagger ghost spawns across the dodge
+		var delay := float(i) * player.dodge_duration * 0.25
+
+		var tree := player.get_tree()
+		if tree == null:
+			return
+		var timer := tree.create_timer(delay)
+		timer.timeout.connect(func() -> void:
+			if not is_instance_valid(player) or not is_instance_valid(parent):
+				return
+
+			var ghost := Sprite2D.new()
+			ghost.texture = player.anim_sprite.sprite_frames.get_frame_texture(
+				player.anim_sprite.animation, player.anim_sprite.frame
+			)
+			ghost.global_position = player.global_position
+			ghost.rotation = player.anim_sprite.rotation
+			ghost.offset = player.anim_sprite.offset
+			ghost.modulate = Color(0.5, 0.7, 1.0, 0.35)
+			ghost.z_index = -1
+			ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			parent.add_child(ghost)
+
+			var tween := ghost.create_tween()
+			tween.tween_property(ghost, "modulate:a", 0.0, 0.25).set_ease(Tween.EASE_IN)
+			tween.tween_callback(ghost.queue_free)
+		)
 
 func exit() -> void:
 	# Restore normal collision and start cooldown timer in player component.

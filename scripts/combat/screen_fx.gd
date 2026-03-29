@@ -93,3 +93,69 @@ static func spawn_ground_crack(parent: Node, pos: Vector2, radius: float = 20.0)
 	var tween := crack_node.create_tween()
 	tween.tween_property(crack_node, "modulate:a", 0.0, 1.5).set_delay(0.5)
 	tween.tween_callback(crack_node.queue_free)
+
+static func flash(node: Node, color: Color = Color(1, 1, 1, 0.6), duration: float = 0.12) -> void:
+	## Full-screen color flash (white for big hits, red for player damage, etc).
+	if node == null or not is_instance_valid(node):
+		return
+	var viewport := node.get_viewport()
+	if viewport == null:
+		return
+
+	var layer := CanvasLayer.new()
+	layer.layer = 8
+	node.get_tree().root.add_child(layer)
+
+	var rect := ColorRect.new()
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.color = color
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(rect)
+
+	var tween := rect.create_tween()
+	tween.tween_property(rect, "color:a", 0.0, duration).set_ease(Tween.EASE_IN)
+	tween.tween_callback(layer.queue_free)
+
+static func spawn_impact_ring(parent: Node, pos: Vector2, color: Color = Color(1.0, 0.9, 0.6, 0.7), max_radius: float = 30.0) -> void:
+	## Expanding shockwave ring at impact point.
+	if parent == null or not is_instance_valid(parent):
+		return
+
+	var ring := Node2D.new()
+	ring.global_position = pos
+	ring.z_index = 5
+	parent.add_child(ring)
+
+	# Draw ring using a script-less approach: use Line2D as a circle
+	var segments := 24
+	var line := Line2D.new()
+	line.width = 2.5
+	line.default_color = color
+	for i in range(segments + 1):
+		var angle: float = TAU * float(i) / float(segments)
+		line.add_point(Vector2(cos(angle), sin(angle)) * 4.0)
+	ring.add_child(line)
+
+	var tween := ring.create_tween().set_parallel(true)
+	tween.tween_property(ring, "scale", Vector2(max_radius / 4.0, max_radius / 4.0), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(ring, "modulate:a", 0.0, 0.3).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(ring.queue_free)
+
+static func spawn_smoke_puff(parent: Node, pos: Vector2, count: int = 3) -> void:
+	## Small smoke particles drifting upward.
+	if parent == null or not is_instance_valid(parent):
+		return
+
+	for i in range(count):
+		var puff := Sprite2D.new()
+		puff.texture = PlaceholderSprites.create_circle_texture(randi_range(3, 6), Color(0.3, 0.3, 0.35, 0.5))
+		puff.global_position = pos + Vector2(randf_range(-10, 10), randf_range(-5, 5))
+		puff.z_index = 5
+		parent.add_child(puff)
+
+		var tween := puff.create_tween().set_parallel(true)
+		tween.tween_property(puff, "position:y", puff.position.y - randf_range(20, 40), randf_range(0.4, 0.7))
+		tween.tween_property(puff, "position:x", puff.position.x + randf_range(-15, 15), randf_range(0.4, 0.7))
+		tween.tween_property(puff, "modulate:a", 0.0, 0.5).set_delay(0.15)
+		tween.tween_property(puff, "scale", Vector2(1.8, 1.8), 0.6)
+		tween.chain().tween_callback(puff.queue_free)

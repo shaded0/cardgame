@@ -28,6 +28,7 @@ func _ready() -> void:
 	queue_redraw()
 	_configure_from_current_room()
 	_setup_vignette()
+	_spawn_ambient_particles()
 
 	if spawn_initial_wave:
 		# Spawn enemies after a brief delay so the scene is fully assembled first.
@@ -57,6 +58,10 @@ func _draw() -> void:
 				floor_color = Color(0.14, 0.16, 0.22, 1.0)
 			else:
 				floor_color = Color(0.11, 0.13, 0.18, 1.0)
+
+			# Per-tile color variation for organic look
+			var tile_hash: float = fmod(absf(sin(float(ix * 73 + iy * 137))), 1.0)
+			floor_color = floor_color.lightened((tile_hash - 0.5) * 0.08)
 
 			# Ambient depth gradient — darken tiles further from center
 			var edge_dist := absi(ix) + absi(iy)
@@ -213,6 +218,41 @@ func _show_card_rewards() -> void:
 	reward_screen.rewards_skipped.connect(func() -> void:
 		GameManager.go_to_map()
 	)
+
+func _spawn_ambient_particles() -> void:
+	var particle_layer := Node2D.new()
+	particle_layer.z_index = -1
+	particle_layer.name = "AmbientParticles"
+	add_child(particle_layer)
+
+	for i in range(25):
+		var mote := Sprite2D.new()
+		var size := randi_range(2, 4)
+		var alpha := randf_range(0.08, 0.2)
+		var r := randf_range(0.8, 1.0)
+		var g := randf_range(0.4, 0.7)
+		mote.texture = PlaceholderSprites.create_circle_texture(size, Color(r, g, 0.2, alpha))
+		mote.position = Vector2(randf_range(-400, 400), randf_range(-250, 250))
+		mote.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		particle_layer.add_child(mote)
+		_animate_mote(mote)
+
+func _animate_mote(mote: Sprite2D) -> void:
+	if not is_instance_valid(mote) or not mote.is_inside_tree():
+		return
+
+	var duration := randf_range(3.0, 6.0)
+	var drift_x := randf_range(-30, 30)
+	var drift_y := randf_range(-40, -15)
+	var start_pos := Vector2(randf_range(-400, 400), randf_range(-250, 250))
+	mote.position = start_pos
+	mote.modulate.a = 0.0
+
+	var tween := mote.create_tween()
+	tween.tween_property(mote, "modulate:a", 1.0, duration * 0.2)
+	tween.tween_property(mote, "position", start_pos + Vector2(drift_x, drift_y), duration * 0.6)
+	tween.tween_property(mote, "modulate:a", 0.0, duration * 0.2)
+	tween.tween_callback(_animate_mote.bind(mote))
 
 func _setup_vignette() -> void:
 	var layer := CanvasLayer.new()

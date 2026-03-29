@@ -5,8 +5,8 @@ extends ArenaBase
 var golem_data: EnemyData = preload("res://resources/enemy_data/golem_boss_data.tres")
 
 func _ready() -> void:
-	arena_radius = 600.0
-	grid_count = 9
+	arena_radius = 900.0
+	grid_count = 14
 	enemies_to_spawn = max(enemies_to_spawn, 1)
 	super._ready()
 	_place_obstacles()

@@ -7,6 +7,8 @@ extends Control
 @onready var mana_bar: ProgressBar = $ManaBar
 @onready var card_hand: HBoxContainer = $CardHand
 var card_slots: Array = []
+var draw_counter_label: Label = null
+var _deck_viewer: CanvasLayer = null
 
 func _ready() -> void:
 	# HUD needs to refresh while paused so card availability still updates.
@@ -36,6 +38,10 @@ func _connect_to_player() -> void:
 	# Connect to card manager signal: hand changes redraw slots immediately.
 	var card_mgr: CardManager = player.get_node("CardManager")
 	card_mgr.hand_updated.connect(_on_hand_updated)
+	card_mgr.draw_pile_changed.connect(_on_draw_pile_changed)
+	card_mgr.deck_reshuffled.connect(_on_deck_reshuffled)
+	card_mgr.card_cycled.connect(_on_card_cycled)
+	card_mgr.card_played.connect(_on_card_played_synergy)
 
 	# Initialize references to each slot and show matching hotkey hints (1-4).
 	card_slots = card_hand.get_children()
@@ -43,6 +49,15 @@ func _connect_to_player() -> void:
 		card_slots[i].slot_index = i
 		var key_hint: Label = card_slots[i].get_node("VBoxContainer/KeyHint")
 		key_hint.text = str(i + 1)
+
+	# Draw pile counter above the card hand
+	draw_counter_label = Label.new()
+	draw_counter_label.text = "Draw: %d" % card_mgr.draw_pile.size()
+	draw_counter_label.add_theme_font_size_override("font_size", 16)
+	draw_counter_label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
+	draw_counter_label.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	draw_counter_label.position = Vector2(card_hand.position.x, card_hand.position.y - 24)
+	add_child(draw_counter_label)
 
 	# Populate hand immediately (we missed the initial hand_updated signal)
 	if card_mgr.hand.size() > 0:
@@ -76,6 +91,104 @@ func _on_hand_updated(hand: Array) -> void:
 
 	# Update playability based on current mana
 	_update_card_playability()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("view_deck"):
+		if _deck_viewer:
+			_hide_deck_viewer()
+		else:
+			_show_deck_viewer()
+
+func _on_draw_pile_changed(count: int) -> void:
+	if draw_counter_label:
+		draw_counter_label.text = "Draw: %d" % count
+
+func _on_deck_reshuffled() -> void:
+	if draw_counter_label == null:
+		return
+	draw_counter_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2))
+	var tween := create_tween()
+	tween.tween_property(draw_counter_label, "scale", Vector2(1.3, 1.3), 0.15).set_ease(Tween.EASE_OUT)
+	tween.tween_property(draw_counter_label, "scale", Vector2(1.0, 1.0), 0.2)
+	tween.tween_callback(func():
+		draw_counter_label.add_theme_color_override("font_color", Color(0.6, 0.7, 0.8))
+	)
+
+func _on_card_cycled(_old_card: CardData, _new_card: CardData, slot_index: int) -> void:
+	if slot_index >= 0 and slot_index < card_slots.size():
+		card_slots[slot_index].play_cycle_animation()
+
+func _on_card_played_synergy(_card: CardData, played_slot: int, _mana_spent: float) -> void:
+	var player := _find_player()
+	if player == null:
+		return
+	var card_mgr: CardManager = player.get_node("CardManager")
+
+	# Wait one frame so CardEffectResolver has applied buffs/debuffs
+	await get_tree().process_frame
+
+	for i in range(card_slots.size()):
+		if i == played_slot:
+			continue
+		if i >= card_mgr.hand.size() or card_mgr.hand[i] == null:
+			continue
+		if SynergyChecker.check_synergy(card_mgr.hand[i], player):
+			card_slots[i].play_synergy_glow()
+
+func _show_deck_viewer() -> void:
+	var player := _find_player()
+	if player == null:
+		return
+	var card_mgr: CardManager = player.get_node("CardManager")
+	var status: Dictionary = card_mgr.get_deck_status()
+
+	_deck_viewer = CanvasLayer.new()
+	_deck_viewer.layer = 15
+	add_child(_deck_viewer)
+
+	var bg := ColorRect.new()
+	bg.color = Color(0, 0, 0, 0.7)
+	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	_deck_viewer.add_child(bg)
+
+	var center := Control.new()
+	center.set_anchors_preset(Control.PRESET_CENTER)
+	center.size = Vector2(900, 500)
+	center.position = Vector2(-450, -250)
+	_deck_viewer.add_child(center)
+
+	var root := HBoxContainer.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_theme_constant_override("separation", 40)
+	center.add_child(root)
+
+	var groups: Array[Dictionary] = [
+		{"title": "In Hand", "cards": status.hand, "color": Color(0.4, 1.0, 0.5)},
+		{"title": "Draw Pile (%d)" % status.draw_pile.size(), "cards": status.draw_pile, "color": Color(0.6, 0.7, 0.8)},
+		{"title": "Exhausted", "cards": status.exhaust_pile, "color": Color(1.0, 0.4, 0.4)},
+	]
+	for group_data in groups:
+		var col := VBoxContainer.new()
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		root.add_child(col)
+		var title := Label.new()
+		title.text = group_data.title
+		title.add_theme_font_size_override("font_size", 20)
+		title.add_theme_color_override("font_color", group_data.color)
+		col.add_child(title)
+		for card: CardData in group_data.cards:
+			if card == null:
+				continue
+			var lbl := Label.new()
+			lbl.text = "%s (%s)" % [card.card_name, card.get_cost_label()]
+			lbl.add_theme_font_size_override("font_size", 14)
+			col.add_child(lbl)
+
+func _hide_deck_viewer() -> void:
+	if _deck_viewer:
+		_deck_viewer.queue_free()
+		_deck_viewer = null
 
 func _update_card_playability() -> void:
 	# Re-query player each call so the UI reflects fresh mana and deck state.

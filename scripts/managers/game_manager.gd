@@ -53,8 +53,18 @@ func start_new_run() -> void:
 	run_deck = current_class_config.card_pool.duplicate() if current_class_config else []
 	_load_all_rooms()
 
+const MIN_DECK_SIZE: int = 4
+
 func add_card_to_deck(card: CardData) -> void:
 	run_deck.append(card)
+
+func remove_card_from_deck(deck_index: int) -> bool:
+	if run_deck.size() <= MIN_DECK_SIZE:
+		return false
+	if deck_index < 0 or deck_index >= run_deck.size():
+		return false
+	run_deck.remove_at(deck_index)
+	return true
 
 func _load_all_rooms() -> void:
 	all_rooms.clear()

@@ -9,10 +9,10 @@ signal room_cleared
 var enemy_scene: PackedScene = preload("res://scenes/enemies/base_enemy.tscn")
 var slime_data: EnemyData = preload("res://resources/enemy_data/slime_data.tres")
 
-var arena_radius: float = 520.0
+var arena_radius: float = 780.0
 var tile_w: int = 96
 var tile_h: int = 48
-var grid_count: int = 8
+var grid_count: int = 12
 var enemies_to_spawn: int = 4
 var enemies_spawned: bool = false
 var room_is_cleared: bool = false
@@ -279,6 +279,23 @@ func _add_obstacle(type: Obstacle.ObstacleType, pos: Vector2) -> void:
 	var obs := Obstacle.new()
 	entity_layer.add_child(obs)
 	obs.setup(type, pos)
+
+func _add_grass_cluster(center: Vector2, count: int = 3, spread: float = 30.0) -> void:
+	## Spawn a cluster of grass patches around a center point.
+	for i in range(count):
+		var patch := GrassPatch.new()
+		var offset := Vector2(randf_range(-spread, spread), randf_range(-spread * 0.5, spread * 0.5))
+		entity_layer.add_child(patch)
+		patch.setup(center + offset, randi_range(3, 5))
+
+func _spawn_random_grass(count: int = 8) -> void:
+	## Scatter grass patches randomly within the arena for ambient decoration.
+	var max_dist: float = arena_radius * 0.7
+	for i in range(count):
+		var angle: float = randf() * TAU
+		var dist: float = randf_range(50.0, max_dist)
+		var pos := Vector2(cos(angle) * dist, sin(angle) * 0.5 * dist)
+		_add_grass_cluster(pos, randi_range(1, 3), 20.0)
 
 func _configure_from_current_room() -> void:
 	if GameManager.current_room:

@@ -6,12 +6,9 @@ func execute(player: PlayerController, direction: Vector2) -> void:
 	var hitbox: Hitbox = player.get_node_or_null("Hitbox") as Hitbox
 	if hitbox == null:
 		return
-	var hitbox_shape: CollisionShape2D = hitbox.get_node_or_null("CollisionShape2D")
-	if hitbox_shape == null:
+	if not player.enable_attack_hitbox(direction * 54.0):
 		return
 
-	hitbox.position = direction * 54.0
-	hitbox_shape.disabled = false
 	hitbox.damage = player.get_effective_damage() if player.has_method("get_effective_damage") else player.attack_damage
 
 	_spawn_swing_arc(player, direction)
@@ -42,14 +39,7 @@ func _spawn_swing_arc(player: PlayerController, direction: Vector2) -> void:
 	tween.tween_callback(arc.queue_free)
 
 func end_attack(player: PlayerController) -> void:
-	var hitbox: Hitbox = player.get_node_or_null("Hitbox") as Hitbox
-	if hitbox == null:
-		return
-	var hitbox_shape: CollisionShape2D = hitbox.get_node_or_null("CollisionShape2D")
-	if hitbox_shape == null:
-		return
-	hitbox_shape.disabled = true
-	hitbox.position = Vector2.ZERO
+	player.disable_attack_hitbox()
 
 func get_attack_duration() -> float:
 	return 0.5

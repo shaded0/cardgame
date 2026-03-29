@@ -14,6 +14,8 @@ var _glow_time: float = 0.0
 var _panel_style: StyleBoxFlat = null
 var _exhaust_label: Label = null
 var _rarity_indicator: Label = null
+var _synergy_tween: Tween = null
+var _synergy_overlay: ColorRect = null
 
 func _ready() -> void:
 	key_hint_label.text = str(slot_index + 1)
@@ -149,6 +151,36 @@ func _update_exhaust_badge() -> void:
 		_exhaust_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		_exhaust_label.position = Vector2(size.x - 18, 2)
 		add_child(_exhaust_label)
+
+func play_cycle_animation() -> void:
+	var original_x: float = position.x
+	var tween := create_tween()
+	tween.tween_property(self, "position:x", original_x + 60, 0.1).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(self, "modulate:a", 0.0, 0.1)
+	tween.tween_callback(func(): position.x = original_x - 60)
+	tween.tween_property(self, "position:x", original_x, 0.15).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.parallel().tween_property(self, "modulate:a", 1.0, 0.12)
+
+func play_synergy_glow(duration: float = 1.5) -> void:
+	if _synergy_tween and _synergy_tween.is_valid():
+		_synergy_tween.kill()
+
+	if _synergy_overlay == null:
+		_synergy_overlay = ColorRect.new()
+		_synergy_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_synergy_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_synergy_overlay.color = Color(1.0, 0.75, 0.15, 0.0)
+		add_child(_synergy_overlay)
+
+	_synergy_overlay.visible = true
+	_synergy_overlay.color.a = 0.0
+
+	_synergy_tween = create_tween()
+	_synergy_tween.tween_property(_synergy_overlay, "color:a", 0.25, 0.15).set_ease(Tween.EASE_OUT)
+	_synergy_tween.tween_property(_synergy_overlay, "color:a", 0.08, 0.4).set_ease(Tween.EASE_IN_OUT)
+	_synergy_tween.tween_property(_synergy_overlay, "color:a", 0.2, 0.35).set_ease(Tween.EASE_IN_OUT)
+	_synergy_tween.tween_property(_synergy_overlay, "color:a", 0.0, duration - 0.9)
+	_synergy_tween.tween_callback(func(): _synergy_overlay.visible = false)
 
 func _update_rarity_indicator() -> void:
 	if _rarity_indicator:

@@ -5,6 +5,7 @@ extends ArenaBase
 func _ready() -> void:
 	super._ready()
 	_place_obstacles()
+	_spawn_random_grass(10)
 
 func _place_obstacles() -> void:
 	# Scattered pillars

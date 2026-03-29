@@ -1,6 +1,8 @@
 class_name PlayerController
 extends CharacterBody2D
 
+const DODGE_AFTERIMAGE_FX_TAG := "dodge_afterimage"
+
 # Stats (will be set by ClassConfig)
 @export var move_speed: float = 420.0
 @export var dodge_speed: float = 840.0
@@ -10,8 +12,8 @@ extends CharacterBody2D
 @export var attack_damage: float = 20.0
 
 ## Movement feel tuning — acceleration uses curved ramp for snappy-but-weighty feel.
-@export var acceleration: float = 2800.0  ## Units/s² toward max speed
-@export var deceleration: float = 3600.0  ## Units/s² when releasing input (tighter than accel)
+@export var acceleration: float = 1700.0  ## Units/s² toward max speed
+@export var deceleration: float = 2200.0  ## Units/s² when releasing input (tighter than accel)
 @export var turn_decel_multiplier: float = 1.6  ## Extra decel when reversing direction
 
 ## Base stats stored so buffs can add/remove from a known baseline.
@@ -259,8 +261,11 @@ func start_attack() -> bool:
 		_log_attack("start_attack_failed_missing_controller")
 		return false
 	else:
-		hitbox_shape.disabled = false
-		hitbox.position = aim * 60.0
+		if not enable_attack_hitbox(aim * 60.0):
+			_attack_active = false
+			_disable_attack_hitbox()
+			_log_attack("start_attack_failed_enable_hitbox")
+			return false
 		_log_attack("start_attack_fallback_melee", {"duration": attack_duration})
 	return true
 
@@ -304,6 +309,7 @@ func force_end_attack() -> void:
 	if attack_visual:
 		attack_visual.visible = false
 	_disable_attack_hitbox()
+	clear_tracked_fx(DODGE_AFTERIMAGE_FX_TAG)
 	if state_machine and state_machine.is_in_state("attack"):
 		state_machine.recover_to_neutral()
 
@@ -356,6 +362,37 @@ func _disable_attack_hitbox() -> void:
 		hitbox_shape.set_deferred("disabled", true)
 	if is_instance_valid(hitbox):
 		hitbox.position = Vector2.ZERO
+
+func disable_attack_hitbox() -> void:
+	_disable_attack_hitbox()
+
+func enable_attack_hitbox(offset: Vector2, damage: float = -1.0) -> bool:
+	if not is_instance_valid(hitbox) or not is_instance_valid(hitbox_shape):
+		return false
+	if damage >= 0.0:
+		hitbox.damage = damage
+	hitbox.position = offset
+	hitbox_shape.set_deferred("disabled", false)
+	return true
+
+func clear_tracked_fx(fx_tag: String = "") -> void:
+	var parent := get_parent()
+	if parent == null or not is_instance_valid(parent):
+		return
+
+	var removed_count := 0
+	for child in parent.get_children():
+		if not (child is CanvasItem):
+			continue
+		if child.get_meta("fx_owner_id", -1) != get_instance_id():
+			continue
+		if not fx_tag.is_empty() and child.get_meta("fx_tag", "") != fx_tag:
+			continue
+		child.queue_free()
+		removed_count += 1
+
+	if removed_count > 0:
+		_log_attack("clear_tracked_fx", {"tag": fx_tag if not fx_tag.is_empty() else "all", "count": removed_count})
 
 func _get_state_name() -> String:
 	if state_machine == null or state_machine.current_state == null:

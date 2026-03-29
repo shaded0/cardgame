@@ -8,9 +8,14 @@ signal card_played(card: CardData, slot_index: int, mana_spent: float)
 signal hand_updated(hand: Array[CardData])
 signal card_exhausted(card: CardData)
 signal tactical_focus_changed(active: bool)
+signal card_cycled(old_card: CardData, new_card: CardData, slot_index: int)
+signal draw_pile_changed(count: int)
+signal deck_reshuffled
 
 const HAND_SIZE: int = 4
 const TACTICAL_TIME_SCALE: float = 0.15  ## 15% speed — slow enough to read cards, fast enough to feel alive
+const CYCLE_MANA_COST: int = 5
+const CYCLE_COOLDOWN: float = 1.5
 
 var deck: Array[CardData] = []
 var draw_pile: Array[CardData] = []
@@ -18,6 +23,7 @@ var hand: Array[CardData] = []
 var exhaust_pile: Array[CardData] = []
 var _tactical_focus_active: bool = false
 var _base_time_scale: float = 1.0  ## Track non-tactical time scale so hitstop/etc. can coexist
+var _cycle_cooldown_timer: float = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -44,8 +50,12 @@ func initialize_deck(card_pool: Array[CardData]) -> void:
 		hand.append(_draw_next_card())
 
 	hand_updated.emit(hand.duplicate())
+	draw_pile_changed.emit(draw_pile.size())
 
 func _process(_delta: float) -> void:
+	if _cycle_cooldown_timer > 0.0:
+		_cycle_cooldown_timer -= _delta
+
 	# Tactical focus: hold RMB or Shift to slow time while choosing cards.
 	# Using _process instead of _input because we need to detect held state, not just press/release.
 	if get_tree().paused:
@@ -62,6 +72,10 @@ func _process(_delta: float) -> void:
 			_end_tactical_focus()
 
 func _unhandled_input(event: InputEvent) -> void:
+	for i in range(HAND_SIZE):
+		if event.is_action_pressed("cycle_card_%d" % (i + 1)):
+			try_cycle_card(i)
+			return
 	for i in range(HAND_SIZE):
 		if event.is_action_pressed("play_card_%d" % (i + 1)):
 			try_play_card(i)
@@ -138,12 +152,54 @@ func _get_mana_to_spend(card: CardData, available_mana: float) -> float:
 		return maxf(available_mana, 0.0)
 	return float(card.mana_cost) if available_mana >= card.mana_cost else 0.0
 
+func try_cycle_card(slot_index: int) -> void:
+	if _cycle_cooldown_timer > 0.0:
+		return
+	if slot_index < 0 or slot_index >= hand.size():
+		return
+	var old_card: CardData = hand[slot_index]
+	if old_card == null:
+		return
+
+	var player: CharacterBody2D = get_parent() as CharacterBody2D
+	if player == null:
+		return
+	var mana_comp: ManaComponent = player.get_node_or_null("ManaComponent")
+	if mana_comp == null:
+		return
+	if not mana_comp.spend_mana(CYCLE_MANA_COST):
+		return
+
+	# Shuffle old card back into draw pile at a random position
+	if draw_pile.is_empty():
+		draw_pile.append(old_card)
+	else:
+		draw_pile.insert(randi() % draw_pile.size(), old_card)
+
+	var new_card: CardData = _draw_next_card()
+	hand[slot_index] = new_card
+
+	_cycle_cooldown_timer = CYCLE_COOLDOWN
+	card_cycled.emit(old_card, new_card, slot_index)
+	hand_updated.emit(hand.duplicate())
+
+func get_deck_status() -> Dictionary:
+	return {
+		"hand": hand.duplicate(),
+		"draw_pile": draw_pile.duplicate(),
+		"exhaust_pile": exhaust_pile.duplicate(),
+	}
+
 func _draw_next_card() -> CardData:
 	if draw_pile.is_empty():
 		draw_pile = deck.duplicate()
 		draw_pile.shuffle()
+		deck_reshuffled.emit()
 
 	if draw_pile.is_empty():
+		draw_pile_changed.emit(0)
 		return null
 
-	return draw_pile.pop_back()
+	var card: CardData = draw_pile.pop_back()
+	draw_pile_changed.emit(draw_pile.size())
+	return card

@@ -167,7 +167,7 @@ static func make_room(
 	return room
 
 static func _make_named_child(script: Script, node_name: String) -> Node:
-	var node := script.new()
+	var node: Node = script.new() as Node
 	node.name = node_name
 	return node
 

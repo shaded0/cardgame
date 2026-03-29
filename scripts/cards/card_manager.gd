@@ -34,7 +34,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE or what == NOTIFICATION_EXIT_TREE:
 		if _tactical_focus_active:
 			_tactical_focus_active = false
-			Engine.time_scale = 1.0
+			Engine.time_scale = _base_time_scale
 
 func initialize_deck(card_pool: Array[CardData]) -> void:
 	deck = card_pool.duplicate()
@@ -115,7 +115,7 @@ func try_play_card(slot_index: int) -> void:
 
 	var mana_to_spend: float = _get_mana_to_spend(card, mana_comp.current_mana)
 
-	if not mana_comp.spend_mana(mana_to_spend):
+	if mana_to_spend > 0.0 and not mana_comp.spend_mana(mana_to_spend):
 		return
 
 	if card.generates_mana > 0:
@@ -147,7 +147,10 @@ func _replace_card(slot_index: int, played_card: CardData) -> void:
 func can_play_card(card: CardData, available_mana: float) -> bool:
 	if card == null:
 		return false
-	return _get_mana_to_spend(card, available_mana) > 0.0
+	if card.is_x_cost:
+		return _get_mana_to_spend(card, available_mana) > 0.0
+	var effective_cost: float = maxf(float(card.mana_cost) + _mana_cost_modifier, 0.0)
+	return available_mana >= effective_cost
 
 func _get_mana_to_spend(card: CardData, available_mana: float) -> float:
 	if card.is_x_cost:

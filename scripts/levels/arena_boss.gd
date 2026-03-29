@@ -9,6 +9,7 @@ func _ready() -> void:
 	arena_radius = 1300.0
 	grid_count = 22
 	floor_theme = FloorTheme.MOLTEN_THRONE
+	_theme_set_by_subclass = true
 	enemies_to_spawn = max(enemies_to_spawn, 1)
 	super._ready()
 	_place_obstacles()

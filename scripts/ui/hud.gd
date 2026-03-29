@@ -25,13 +25,17 @@ func _connect_to_player() -> void:
 
 	# Connect to player's health component signal: UI updates whenever health changes.
 	var health: HealthComponent = player.get_node("HealthComponent")
-	health.health_changed.connect(_on_health_changed)
+	var health_changed_cb := Callable(self, "_on_health_changed")
+	if not health.health_changed.is_connected(health_changed_cb):
+		health.health_changed.connect(health_changed_cb)
 	health_bar.max_value = health.max_health
 	health_bar.value = health.current_health
 
 	# Connect to player's mana component signal: UI updates on regen/spend.
 	var mana: ManaComponent = player.get_node("ManaComponent")
-	mana.mana_changed.connect(_on_mana_changed)
+	var mana_changed_cb := Callable(self, "_on_mana_changed")
+	if not mana.mana_changed.is_connected(mana_changed_cb):
+		mana.mana_changed.connect(mana_changed_cb)
 	mana_bar.max_value = mana.max_mana
 	mana_bar.value = mana.current_mana
 

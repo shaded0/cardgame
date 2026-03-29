@@ -10,6 +10,7 @@ signal rewards_skipped
 var _card_options: Array[CardData] = []
 var _bg: ColorRect = null
 var _root: VBoxContainer = null
+var _is_exiting: bool = false
 
 func setup(class_id: StringName, is_elite: bool = false) -> void:
 	var pool := CardPool.new()
@@ -203,15 +204,22 @@ func _create_card_panel(card: CardData, index: int) -> PanelContainer:
 	return panel
 
 func _on_card_picked(index: int) -> void:
+	if _is_exiting:
+		return
 	if index >= 0 and index < _card_options.size():
 		card_chosen.emit(_card_options[index])
 	_exit_animated()
 
 func _on_skip() -> void:
+	if _is_exiting:
+		return
 	rewards_skipped.emit()
 	_exit_animated()
 
 func _exit_animated() -> void:
+	if _is_exiting:
+		return
+	_is_exiting = true
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_bg, "color:a", 0.0, 0.2)
 	tween.tween_property(_root, "modulate:a", 0.0, 0.2)

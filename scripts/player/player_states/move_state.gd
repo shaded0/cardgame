@@ -69,7 +69,7 @@ func handle_input(event: InputEvent) -> void:
 func _squash_stretch(target_scale: Vector2, duration: float) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(player.anim_sprite):
 		return
-	var tween := player.create_tween()
+	var tween: Tween = player.create_tween()
 	tween.tween_property(player.anim_sprite, "scale", target_scale, duration * 0.4)
 	tween.tween_property(player.anim_sprite, "scale", Vector2(1.0, 1.0), duration * 0.6).set_ease(Tween.EASE_OUT)
 

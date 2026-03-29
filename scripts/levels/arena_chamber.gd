@@ -7,6 +7,7 @@ func _ready() -> void:
 	# Use RITUAL theme for elite rooms
 	if GameManager.current_room and GameManager.current_room.room_type == RoomData.RoomType.ELITE:
 		floor_theme = FloorTheme.RITUAL
+		_theme_set_by_subclass = true
 	super._ready()
 	_place_obstacles()
 	_place_decorations()

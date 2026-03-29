@@ -7,6 +7,7 @@ signal rest_completed
 
 var _content_root: VBoxContainer
 var _bg: ColorRect = null
+var _is_completing: bool = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -248,6 +249,8 @@ func _show_remove_screen() -> void:
 	_content_root.add_child(back_btn)
 
 func _on_remove_card(deck_index: int, row_panel: PanelContainer) -> void:
+	if _is_completing:
+		return
 	if not GameManager.remove_card_from_deck(deck_index):
 		return
 	row_panel.modulate = Color(1.5, 0.3, 0.2, 1.0)
@@ -257,16 +260,25 @@ func _on_remove_card(deck_index: int, row_panel: PanelContainer) -> void:
 	tween.chain().tween_callback(_complete)
 
 func _on_rest() -> void:
+	if _is_completing:
+		return
 	GameManager.player_health_carry = -1.0
 	_complete()
 
 func _on_upgrade_card(deck_index: int) -> void:
+	if _is_completing:
+		return
+	if deck_index < 0 or deck_index >= GameManager.run_deck.size():
+		return
 	var card: CardData = GameManager.run_deck[deck_index]
 	if card.upgraded_version:
 		GameManager.run_deck[deck_index] = card.upgraded_version
 	_complete()
 
 func _complete() -> void:
+	if _is_completing:
+		return
+	_is_completing = true
 	rest_completed.emit()
 	# Exit animation
 	var tween := create_tween().set_parallel(true)

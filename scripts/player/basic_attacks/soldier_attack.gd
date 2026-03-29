@@ -2,6 +2,7 @@ extends BaseAttack
 
 ## Melee arc attack — short range, high damage, with visible swing arc.
 
+## Executes a direct melee slash and builds a temporary arc preview to match the hitbox.
 func execute(player: PlayerController, direction: Vector2) -> void:
 	var hitbox: Hitbox = player.get_node_or_null("Hitbox") as Hitbox
 	if hitbox == null:
@@ -13,6 +14,7 @@ func execute(player: PlayerController, direction: Vector2) -> void:
 
 	_spawn_swing_arc(player, direction)
 
+## Draws a short-lived swing arc in player space for player feedback.
 func _spawn_swing_arc(player: PlayerController, direction: Vector2) -> void:
 	var parent: Node = player.get_parent()
 	if parent == null or not is_instance_valid(parent):
@@ -38,8 +40,10 @@ func _spawn_swing_arc(player: PlayerController, direction: Vector2) -> void:
 	tween.tween_property(arc, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(arc.queue_free)
 
+## Cleanly disables the melee hitbox so fallback paths can still end safely.
 func end_attack(player: PlayerController) -> void:
 	player.disable_attack_hitbox()
 
+## Soldier's melee cadence is fixed and longer than the base fallback.
 func get_attack_duration() -> float:
 	return 0.5

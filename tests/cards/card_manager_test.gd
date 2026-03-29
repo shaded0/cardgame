@@ -2,6 +2,9 @@ extends "res://tests/support/test_case.gd"
 
 const Factory = preload("res://tests/support/test_factory.gd")
 
+func after_each() -> void:
+	Engine.time_scale = 1.0
+
 func test_initialize_deck_draws_a_full_hand_and_emits_update() -> void:
 	var player := Factory.make_player(root)
 	Factory.add_mana(player, 100.0, 100.0)
@@ -78,3 +81,69 @@ func test_initialize_deck_with_no_cards_emits_empty_draw_pile_count() -> void:
 
 	assert_eq(card_manager.hand.size(), 0, "Empty decks should leave the player's hand empty.")
 	assert_eq(draw_counts, [0], "Empty decks should explicitly emit a zero draw pile count so the HUD stays in sync.")
+
+func test_try_cycle_card_spends_mana_and_replaces_the_slot() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 100.0, 50.0)
+	var card_manager = Factory.add_card_manager(player)
+	var strike = Factory.make_card("Strike")
+	var defend = Factory.make_card("Defend")
+	card_manager.deck = [strike, defend]
+	card_manager.draw_pile = [defend]
+	card_manager.hand = [strike]
+
+	var cycle_events: Array[String] = []
+	card_manager.card_cycled.connect(func(old_card: CardData, new_card: CardData, slot_index: int) -> void:
+		cycle_events.append("%s>%s@%d" % [old_card.card_name, new_card.card_name, slot_index])
+	)
+
+	card_manager.try_cycle_card(0)
+
+	assert_eq(mana.current_mana, 45.0, "Cycling should spend the configured mana cost.")
+	assert_eq(card_manager.hand[0], defend, "Cycling should replace the chosen slot with the next drawn card.")
+	assert_contains(card_manager.draw_pile, strike, "Cycling should return the old card to the draw pile.")
+	assert_eq(cycle_events, ["Strike>Defend@0"], "Cycling should emit the swapped cards and slot index.")
+
+func test_mana_cost_modifier_immediately_affects_card_playability() -> void:
+	var player := Factory.make_player(root)
+	Factory.add_mana(player, 100.0, 7.0)
+	var card_manager = Factory.add_card_manager(player)
+	var card = Factory.make_card("Heavy Slash", 7)
+
+	assert_true(card_manager.can_play_card(card, 7.0), "Cards should be playable before a silence-style cost increase is applied.")
+
+	card_manager.apply_mana_cost_modifier(2.0, 5.0)
+
+	assert_false(card_manager.can_play_card(card, 7.0), "Temporary mana cost increases should immediately update playability checks.")
+
+func test_zero_cost_cards_remain_playable_without_spending_mana() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 100.0, 6.0)
+	var card_manager = Factory.add_card_manager(player)
+	var free_card = Factory.make_card("Mana Surge", 0)
+	card_manager.hand = [free_card]
+
+	var played_cards: Array[String] = []
+	card_manager.card_played.connect(func(card: CardData, _slot_index: int, mana_spent: float) -> void:
+		played_cards.append("%s@%.1f" % [card.card_name, mana_spent])
+	)
+
+	assert_true(card_manager.can_play_card(free_card, mana.current_mana), "Zero-cost cards should be playable without any extra resource gate.")
+
+	card_manager.try_play_card(0)
+
+	assert_eq(mana.current_mana, 6.0, "Zero-cost cards should not spend mana just to satisfy the shared card-play path.")
+	assert_eq(played_cards, ["Mana Surge@0.0"], "Zero-cost cards should still resolve and report zero mana spent.")
+
+func test_tactical_focus_teardown_restores_the_previous_time_scale() -> void:
+	Engine.time_scale = 0.45
+	var player := Factory.make_player(root)
+	var card_manager: CardManager = Factory.add_card_manager(player)
+
+	card_manager._begin_tactical_focus()
+	assert_near(Engine.time_scale, card_manager.TACTICAL_TIME_SCALE, 0.001, "Entering tactical focus should apply the tactical slowdown.")
+
+	card_manager.queue_free()
+	root.propagate_notification(Node.NOTIFICATION_EXIT_TREE)
+
+	assert_near(Engine.time_scale, 0.45, 0.001, "Destroying CardManager mid-focus should restore the pre-existing time scale instead of forcing normal speed.")

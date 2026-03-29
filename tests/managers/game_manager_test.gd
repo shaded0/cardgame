@@ -52,3 +52,33 @@ func test_start_new_run_resets_state_and_loads_room_resources() -> void:
 	assert_eq(manager.player_health_carry, -1.0, "Starting a run should reset carry health.")
 	assert_eq(manager.all_rooms.size(), 7, "Starting a run should load the configured room resources.")
 	assert_not_null(manager.get_room_by_id("entrance"), "Loaded rooms should be discoverable by room_id.")
+
+func test_remove_card_from_deck_respects_minimum_size_and_invalid_indices() -> void:
+	var manager = Factory.make_game_manager(root)
+	manager.run_deck = [
+		Factory.make_card("A"),
+		Factory.make_card("B"),
+		Factory.make_card("C"),
+		Factory.make_card("D"),
+		Factory.make_card("E"),
+	]
+
+	assert_false(manager.remove_card_from_deck(-1), "Removing a negative deck index should fail safely.")
+	assert_false(manager.remove_card_from_deck(99), "Removing an out-of-range deck index should fail safely.")
+	assert_true(manager.remove_card_from_deck(1), "Decks above the minimum size should allow a card to be removed.")
+	assert_eq(manager.run_deck.size(), 4, "Successful removal should shrink the run deck.")
+	assert_eq(manager.run_deck[1].card_name, "C", "Removal should close the gap at the removed index.")
+	assert_false(manager.remove_card_from_deck(0), "Decks at the minimum size should no longer allow removals.")
+
+func test_complete_room_emits_only_once_per_room() -> void:
+	var manager = Factory.make_game_manager(root)
+	var completed: Array[String] = []
+	manager.room_completed.connect(func(room_id: String) -> void:
+		completed.append(room_id)
+	)
+
+	manager.complete_room("boss")
+	manager.complete_room("boss")
+
+	assert_eq(manager.completed_rooms, ["boss"], "Completing the same room twice should still only record one completion.")
+	assert_eq(completed, ["boss"], "Room completion should only emit once per room so listeners do not repeat completion side effects.")

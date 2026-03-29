@@ -3,8 +3,10 @@ extends Node
 
 ## Iron Beetle armor: passive 30% damage reduction, disabled when VULNERABLE.
 
+## Base reduction before modifiers from external systems.
 var base_reduction: float = 0.3
 
+## Called by `BaseEnemy` damage resolution. Returns 0 when armor is disabled.
 func get_damage_reduction() -> float:
 	var enemy = get_parent()
 	if enemy == null or not is_instance_valid(enemy):

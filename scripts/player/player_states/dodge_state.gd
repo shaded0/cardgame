@@ -45,7 +45,7 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("idle")
 
 func _spawn_afterimages() -> void:
-	var parent := player.get_parent()
+	var parent: Node = player.get_parent()
 	if parent == null:
 		return
 	if player.anim_sprite == null or player.anim_sprite.sprite_frames == null:
@@ -55,10 +55,10 @@ func _spawn_afterimages() -> void:
 		# Stagger ghost spawns across the dodge
 		var delay := float(i) * player.dodge_duration * 0.25
 
-		var tree := player.get_tree()
+		var tree: SceneTree = player.get_tree()
 		if tree == null:
 			return
-		var timer := tree.create_timer(delay)
+		var timer: SceneTreeTimer = tree.create_timer(delay)
 		timer.timeout.connect(func() -> void:
 			if not is_instance_valid(player) or not is_instance_valid(parent):
 				return
@@ -85,11 +85,11 @@ func _spawn_afterimages() -> void:
 			ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			parent.add_child(ghost)
 
-			var tween := ghost.create_tween()
+			var tween: Tween = ghost.create_tween()
 			tween.tween_property(ghost, "modulate:a", 0.0, 0.25).set_ease(Tween.EASE_IN)
 			tween.tween_callback(ghost.queue_free)
 
-			var cleanup_timer := tree.create_timer(0.35, true, false, true)
+			var cleanup_timer: SceneTreeTimer = tree.create_timer(0.35, true, false, true)
 			cleanup_timer.timeout.connect(func() -> void:
 				if is_instance_valid(ghost):
 					ghost.queue_free()

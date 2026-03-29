@@ -8,21 +8,25 @@ const INPUT_BUFFER_DURATION: float = 0.18
 
 var current_state: Node
 var states: Dictionary = {}
+var player = null
 var _attack_buffer_remaining: float = 0.0
 var _dodge_buffer_remaining: float = 0.0
 
 func _ready() -> void:
+	player = get_parent()
 	# Collect child state nodes by lowercase name to allow transition by string.
 	for child in get_children():
 		states[child.name.to_lower()] = child
 		child.state_machine = self
-		child.player = get_parent() as PlayerController
+		child.player = player
 	current_state = states.get("idle")
 	if current_state:
 		current_state.enter()
 
 func _physics_process(delta: float) -> void:
 	# Keep all movement + animation updates in physics step for deterministic movement.
+	if player == null:
+		player = get_parent()
 	if player != null:
 		player.update_movement_input(delta)
 	if Input.is_action_just_pressed("basic_attack"):
@@ -60,15 +64,16 @@ func is_in_state(state_name: String) -> bool:
 	return current_state == states.get(state_name)
 
 func recover_to_neutral() -> void:
-	var player_node: PlayerController = get_parent() as PlayerController
-	if player_node == null:
+	if player == null:
+		player = get_parent()
+	if player == null:
 		return
 	GameManager.log_attack("state_machine", "recover_to_neutral", {"attack_buffer": has_attack_buffer(), "dodge_buffer": has_dodge_buffer()})
 	if consume_attack_buffer():
 		transition_to("attack")
-	elif player_node.can_dodge and consume_dodge_buffer():
+	elif player.can_dodge and consume_dodge_buffer():
 		transition_to("dodge")
-	elif player_node.has_move_intent():
+	elif player.has_move_intent():
 		transition_to("move")
 	else:
 		transition_to("idle")

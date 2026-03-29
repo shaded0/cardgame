@@ -83,8 +83,9 @@ func _load_all_rooms() -> void:
 			all_rooms.append(room)
 
 func complete_room(room_id: String) -> void:
-	if room_id not in completed_rooms:
-		completed_rooms.append(room_id)
+	if room_id in completed_rooms:
+		return
+	completed_rooms.append(room_id)
 	room_completed.emit(room_id)
 
 func is_room_available(room: RoomData) -> bool:
@@ -121,6 +122,7 @@ func _get_first_node_in_group(group_name: StringName) -> Node:
 	return nodes[0]
 
 var _transitioning: bool = false
+var _pending_scene_path: String = ""
 
 func _change_scene(path: String) -> void:
 	var tree := get_tree()
@@ -128,8 +130,8 @@ func _change_scene(path: String) -> void:
 		tree.paused = false
 		game_resumed.emit()
 
+	_pending_scene_path = path
 	if _transitioning:
-		tree.change_scene_to_file(path)
 		return
 
 	_transitioning = true
@@ -150,10 +152,12 @@ func _change_scene(path: String) -> void:
 	fade_out.tween_property(rect, "color:a", 1.0, 0.2).set_ease(Tween.EASE_IN)
 	await fade_out.finished
 
-	tree.change_scene_to_file(path)
-
-	# Wait a frame for new scene to load
-	await tree.process_frame
+	while not _pending_scene_path.is_empty():
+		var next_path := _pending_scene_path
+		_pending_scene_path = ""
+		tree.change_scene_to_file(next_path)
+		# Wait a frame for the new scene to load before applying any queued redirect.
+		await tree.process_frame
 
 	var fade_in := create_tween()
 	fade_in.tween_property(rect, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT)

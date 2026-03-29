@@ -35,6 +35,9 @@ func _ready() -> void:
 	anim_sprite.offset = Vector2(0, -18)
 	anim_sprite.play(&"idle")
 
+	health_component.died.connect(_on_died)
+	hurtbox.received_hit.connect(_on_received_hit)
+
 	if enemy_data:
 		move_speed = enemy_data.move_speed
 		attack_damage = enemy_data.attack_damage
@@ -42,11 +45,9 @@ func _ready() -> void:
 		attack_cooldown = enemy_data.attack_cooldown
 		chase_range = enemy_data.chase_range
 		health_component.max_health = enemy_data.max_health
-		health_component.current_health = enemy_data.max_health
-		hitbox.damage = attack_damage
+		health_component.reset_to_full()
 
-		health_component.died.connect(_on_died)
-		hurtbox.received_hit.connect(_on_received_hit)
+	hitbox.damage = attack_damage
 
 	# Resolve player reference one frame later, after player node is fully ready.
 	await get_tree().process_frame
@@ -81,7 +82,9 @@ func _physics_process(delta: float) -> void:
 		State.ATTACK:
 			pass
 		State.HURT:
-			pass
+			_play_anim(&"idle")
+			move_and_slide()
+			velocity = velocity.lerp(Vector2.ZERO, min(delta * 10.0, 1.0))
 
 func _play_anim(anim_name: StringName) -> void:
 	# Guard avoids restarting same animation every frame.
@@ -116,8 +119,13 @@ func _do_attack() -> void:
 	)
 
 func _on_received_hit(incoming_hitbox: Hitbox) -> void:
+	if current_state == State.DEAD:
+		return
+
 	# Apply health changes from hitbox.
 	health_component.take_damage(incoming_hitbox.damage)
+	if current_state == State.DEAD:
+		return
 
 	# Floating number + white flash gives clear feedback.
 	DamageNumber.spawn(get_parent(), global_position, incoming_hitbox.damage, Color(1.0, 1.0, 1.0))
@@ -138,6 +146,7 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 
 func _on_died() -> void:
 	current_state = State.DEAD
+	hitbox_shape.disabled = true
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(queue_free)

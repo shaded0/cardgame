@@ -9,19 +9,45 @@ signal died
 
 @export var max_health: float = 100.0
 var current_health: float
+var shield_health: float = 0.0
 
 func _ready() -> void:
 	# Always start at full health unless designer overrides after assigning `max_health`.
-	current_health = max_health
+	reset_to_full()
 
 func take_damage(amount: float) -> void:
-	# Clamp to 0 to avoid negative HP and keep UI simple.
-	current_health = max(current_health - amount, 0.0)
-	health_changed.emit(current_health, max_health)
+	# Spend temporary shield first, then apply any remainder to health.
+	var remaining_damage: float = max(amount, 0.0)
+	if shield_health > 0.0 and remaining_damage > 0.0:
+		var absorbed: float = min(shield_health, remaining_damage)
+		shield_health -= absorbed
+		remaining_damage -= absorbed
+
+	if remaining_damage > 0.0:
+		current_health = max(current_health - remaining_damage, 0.0)
+
+	_emit_health_changed()
 	if current_health <= 0.0:
 		died.emit()
 
 func heal(amount: float) -> void:
 	# Clamp to max_health, then notify UI.
 	current_health = min(current_health + amount, max_health)
-	health_changed.emit(current_health, max_health)
+	_emit_health_changed()
+
+func add_shield(amount: float) -> void:
+	# Shield extends effective survivability without permanently raising max health.
+	shield_health = max(shield_health + amount, 0.0)
+	_emit_health_changed()
+
+func set_current_health(value: float) -> void:
+	current_health = clampf(value, 0.0, max_health)
+	_emit_health_changed()
+
+func reset_to_full() -> void:
+	current_health = max_health
+	shield_health = 0.0
+	_emit_health_changed()
+
+func _emit_health_changed() -> void:
+	health_changed.emit(current_health + shield_health, max_health + shield_health)

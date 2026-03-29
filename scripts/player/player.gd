@@ -20,8 +20,8 @@ var current_anim: StringName = &"idle"
 ## - state machine (movement/attack/dodge)
 ## - attack behavior plugin by class
 
-@onready var hitbox: Area2D = $Hitbox
-@onready var hurtbox: Area2D = $Hurtbox
+@onready var hitbox: Hitbox = $Hitbox
+@onready var hurtbox: Hurtbox = $Hurtbox
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
 @onready var hitbox_shape: CollisionShape2D = $Hitbox/CollisionShape2D
 @onready var health_component: HealthComponent = $HealthComponent
@@ -101,8 +101,10 @@ func apply_class_config(config: Resource) -> void:
 	attack_damage = config.attack_damage
 	attack_duration = config.attack_duration
 	health_component.max_health = config.max_health
-	health_component.current_health = config.max_health
+	health_component.reset_to_full()
 	mana_component.max_mana = config.max_mana
+	mana_component.current_mana = 0.0
+	mana_component.mana_changed.emit(mana_component.current_mana, mana_component.max_mana)
 	mana_component.mana_per_hit_dealt = config.mana_per_hit_dealt
 	mana_component.mana_per_hit_taken = config.mana_per_hit_taken
 	hitbox.damage = config.attack_damage
@@ -116,12 +118,18 @@ func apply_class_config(config: Resource) -> void:
 	attack_visual.texture = PlaceholderSprites.create_circle_texture(30, atk_color)
 
 	# Load basic attack script
+	if current_attack and is_instance_valid(current_attack):
+		current_attack.queue_free()
+		current_attack = null
+
 	if config.attack_script:
 		var attack_node := Node.new()
 		attack_node.set_script(config.attack_script)
 		attack_node.name = "BasicAttack"
 		add_child(attack_node)
 		current_attack = attack_node
+		if current_attack.has_method("get_attack_duration"):
+			attack_duration = current_attack.get_attack_duration()
 
 	# Initialize card deck
 	if config.card_pool.size() > 0:
@@ -178,8 +186,8 @@ func end_attack() -> void:
 		hitbox.position = Vector2.ZERO
 
 func set_invincible(value: bool) -> void:
-	# Hurtbox is a collision layer/mask, "monitorable" here controls damage callbacks.
-	hurtbox.set_deferred("monitorable", !value)
+	# Keep dodge immunity in the hurtbox script instead of relying on scene-monitoring side effects.
+	hurtbox.is_invincible = value
 
 func start_dodge_cooldown() -> void:
 	# Start a one-shot timer so dodge can only trigger again after cooldown.

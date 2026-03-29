@@ -24,16 +24,15 @@ func initialize_deck(card_pool: Array) -> void:
 	draw_pile.shuffle()
 	hand.clear()
 
+	if deck.is_empty():
+		hand_updated.emit(hand.duplicate())
+		return
+
 	for i in range(HAND_SIZE):
-		if draw_pile.size() > 0:
-			hand.append(draw_pile.pop_back())
-		else:
-			draw_pile = deck.duplicate()
-			draw_pile.shuffle()
-			hand.append(draw_pile.pop_back())
+		hand.append(_draw_next_card())
 
 	# Inform UI immediately with first draw.
-	hand_updated.emit(hand)
+	hand_updated.emit(hand.duplicate())
 
 func _unhandled_input(event: InputEvent) -> void:
 	# Number keys are mapped to play_card_1...4 in InputMap.
@@ -51,7 +50,15 @@ func try_play_card(slot_index: int) -> void:
 		return
 
 	var player: CharacterBody2D = get_parent() as CharacterBody2D
-	var mana_comp: ManaComponent = player.get_node("ManaComponent")
+	if player == null:
+		push_warning("CardManager: missing player parent")
+		return
+
+	var mana_comp: ManaComponent = player.get_node_or_null("ManaComponent")
+	if mana_comp == null:
+		push_warning("CardManager: missing ManaComponent")
+		return
+
 	# Early out if card is too expensive.
 	if not mana_comp.spend_mana(card.mana_cost):
 		return
@@ -69,7 +76,7 @@ func try_play_card(slot_index: int) -> void:
 
 	# Replace the card in hand according to chain-card or draw-pile logic.
 	_replace_card(slot_index, card)
-	hand_updated.emit(hand)
+	hand_updated.emit(hand.duplicate())
 
 	# If the card has pauses_game, re-pause after a short delay so effect timing is visible.
 	if card.pauses_game and not was_paused:
@@ -81,11 +88,7 @@ func _replace_card(slot_index: int, played_card: Resource) -> void:
 		hand[slot_index] = played_card.chain_card
 		return
 
-	if draw_pile.size() == 0:
-		draw_pile = deck.duplicate()
-		draw_pile.shuffle()
-
-	hand[slot_index] = draw_pile.pop_back()
+	hand[slot_index] = _draw_next_card()
 
 func _pause_after_delay(delay: float) -> void:
 	# Use a one-shot timer, with "process in pause" so it still runs after pausing.
@@ -94,3 +97,13 @@ func _pause_after_delay(delay: float) -> void:
 		if not get_tree().paused:
 			GameManager.toggle_pause()
 	)
+
+func _draw_next_card() -> Resource:
+	if draw_pile.is_empty():
+		draw_pile = deck.duplicate()
+		draw_pile.shuffle()
+
+	if draw_pile.is_empty():
+		return null
+
+	return draw_pile.pop_back()

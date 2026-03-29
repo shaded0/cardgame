@@ -106,10 +106,9 @@ func _resolve_buff(effect: Resource) -> void:
 	timer.timeout.connect(func() -> void: player.move_speed = original_speed)
 
 func _resolve_shield(effect: Resource) -> void:
-	# Add to current health and emit health_changed so bars update.
+	# Shields absorb future damage instead of behaving like overheal.
 	var health: HealthComponent = player.get_node("HealthComponent")
-	health.current_health = min(health.current_health + effect.value, health.max_health + effect.value)
-	health.health_changed.emit(health.current_health, health.max_health)
+	health.add_shield(effect.value)
 	# Visual: shield bubble.
 	SpellEffectVisual.spawn_shield(player.get_parent(), player.global_position)
 	DamageNumber.spawn(player.get_parent(), player.global_position, effect.value, Color(0.4, 0.7, 1.0))

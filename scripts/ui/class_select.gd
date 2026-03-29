@@ -14,6 +14,9 @@ const MAGE_CONFIG_PATH := "res://resources/classes/mage.tres"
 @onready var description_label: Label = $VBoxContainer/Description
 
 func _ready() -> void:
+	# Defensive reset in case the previous scene left the tree paused.
+	get_tree().paused = false
+
 	# Wire each button using anonymous lambdas; keeps signal hookup local and compact.
 	soldier_btn.pressed.connect(func(): _select_class(SOLDIER_CONFIG_PATH))
 	rogue_btn.pressed.connect(func(): _select_class(ROGUE_CONFIG_PATH))

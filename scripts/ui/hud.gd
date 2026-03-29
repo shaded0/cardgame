@@ -63,6 +63,7 @@ func _on_health_changed(current: float, maximum: float) -> void:
 func _on_mana_changed(current: float, maximum: float) -> void:
 	mana_bar.max_value = maximum
 	mana_bar.value = current
+	_update_card_playability()
 
 func _on_hand_updated(hand: Array) -> void:
 	# Populate or clear each slot based on current hand count.
@@ -88,3 +89,5 @@ func _update_card_playability() -> void:
 		if slot.has_method("set_playable"):
 			if i < card_mgr.hand.size() and card_mgr.hand[i] != null:
 				slot.set_playable(mana.current_mana >= card_mgr.hand[i].mana_cost)
+			else:
+				slot.set_playable(false)

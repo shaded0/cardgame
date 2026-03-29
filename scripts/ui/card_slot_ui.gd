@@ -26,6 +26,7 @@ func clear_card() -> void:
 	current_card = null
 	card_name_label.text = ""
 	mana_cost_label.text = ""
+	modulate = Color(1, 1, 1, 1)
 
 func set_playable(can_play: bool) -> void:
 	# Grey out cards you cannot afford to give instant feedback.

@@ -4,11 +4,11 @@ extends BaseAttack
 ## This class is active for Soldier by setting `attack_script` on ClassConfig.
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
-	# Place and enable hitbox in the facing direction.
-	var hitbox: Area2D = player.get_node("Hitbox")
+	var hitbox: Area2D = player.get_node_or_null("Hitbox")
+	if hitbox == null:
+		return
 	var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D")
 
-	# Position hitbox close to player in facing direction
 	hitbox.position = direction * 54.0
 	hitbox_shape.disabled = false
 	hitbox.damage = player.attack_damage
@@ -41,8 +41,9 @@ func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
 	tween.tween_callback(arc.queue_free)
 
 func end_attack(player: CharacterBody2D) -> void:
-	# Cleanly disable melee collider at end of swing.
-	var hitbox: Area2D = player.get_node("Hitbox")
+	var hitbox: Area2D = player.get_node_or_null("Hitbox")
+	if hitbox == null:
+		return
 	var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D")
 	hitbox_shape.disabled = true
 	hitbox.position = Vector2.ZERO

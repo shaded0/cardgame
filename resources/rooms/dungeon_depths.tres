@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+room_id = "dungeon_depths"
+display_name = "Dungeon Depths"
+description = "The deepest level. Dangerous creatures dwell here."
+room_type = 0
+arena_scene_path = "res://scenes/levels/arena_halls.tscn"
+enemy_count = 6
+tier = 3
+connections = Array[String](["boss_chamber"])

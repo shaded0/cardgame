@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+room_id = "boss_chamber"
+display_name = "Boss Chamber"
+description = "The final confrontation awaits."
+room_type = 3
+arena_scene_path = "res://scenes/levels/arena_boss.tscn"
+enemy_count = 1
+tier = 4
+connections = Array[String]([])

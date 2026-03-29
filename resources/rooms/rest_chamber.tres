@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+room_id = "rest_chamber"
+display_name = "Rest Chamber"
+description = "A safe haven. Recover your strength."
+room_type = 2
+arena_scene_path = ""
+enemy_count = 0
+tier = 2
+connections = Array[String](["dungeon_depths", "trapped_hall"])

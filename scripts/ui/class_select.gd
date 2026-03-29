@@ -38,5 +38,5 @@ func _select_class(config_path: String) -> void:
 		return
 
 	GameManager.current_class_config = config
-	# Swap scene once selection is confirmed.
-	get_tree().change_scene_to_file("res://scenes/main.tscn")
+	GameManager.start_new_run()
+	get_tree().change_scene_to_file("res://scenes/map/map.tscn")

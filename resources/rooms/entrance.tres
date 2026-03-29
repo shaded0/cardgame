@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+room_id = "entrance"
+display_name = "Entrance Hall"
+description = "The first chamber. Slimes lurk in the shadows."
+room_type = 0
+arena_scene_path = "res://scenes/levels/arena_chamber.tscn"
+enemy_count = 3
+tier = 0
+connections = Array[String](["dark_corridor", "armory"])

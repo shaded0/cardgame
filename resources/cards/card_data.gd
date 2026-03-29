@@ -1,6 +1,9 @@
 class_name CardData
 extends Resource
 
+## Data shape for playable cards.
+## `card effects` are resolved by `CardEffectResolver`.
+
 enum CardClass { NEUTRAL, SOLDIER, ROGUE, MAGE }
 
 @export var card_name: String = ""

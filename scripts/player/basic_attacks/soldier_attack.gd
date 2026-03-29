@@ -1,8 +1,10 @@
 extends BaseAttack
 
 ## Melee arc attack — short range, high damage, with visible swing arc
+## This class is active for Soldier by setting `attack_script` on ClassConfig.
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
+	# Place and enable hitbox in the facing direction.
 	var hitbox: Area2D = player.get_node("Hitbox")
 	var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D")
 
@@ -15,6 +17,7 @@ func execute(player: CharacterBody2D, direction: Vector2) -> void:
 	_spawn_swing_arc(player, direction)
 
 func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
+	# Arc is one-shot Line2D feedback, not used for gameplay collision.
 	var arc := Line2D.new()
 	arc.z_index = 5
 	arc.width = 2.0
@@ -38,6 +41,7 @@ func _spawn_swing_arc(player: CharacterBody2D, direction: Vector2) -> void:
 	tween.tween_callback(arc.queue_free)
 
 func end_attack(player: CharacterBody2D) -> void:
+	# Cleanly disable melee collider at end of swing.
 	var hitbox: Area2D = player.get_node("Hitbox")
 	var hitbox_shape: CollisionShape2D = hitbox.get_node("CollisionShape2D")
 	hitbox_shape.disabled = true

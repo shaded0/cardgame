@@ -14,6 +14,12 @@ var current_attack: Node = null
 var attack_visual: Sprite2D = null
 var current_anim: StringName = &"idle"
 
+## Core player node with multiple components:
+## - hitbox/hurtbox (combat)
+## - health/mana (resources)
+## - state machine (movement/attack/dodge)
+## - attack behavior plugin by class
+
 @onready var hitbox: Area2D = $Hitbox
 @onready var hurtbox: Area2D = $Hurtbox
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
@@ -23,6 +29,7 @@ var current_anim: StringName = &"idle"
 @onready var card_manager: CardManager = $CardManager
 
 func _ready() -> void:
+	# Start with disabled melee hitbox; each attack enables it on demand.
 	hitbox_shape.disabled = true
 
 	_setup_animated_sprite()
@@ -47,6 +54,7 @@ func _ready() -> void:
 		apply_class_config(config)
 
 func _setup_animated_sprite() -> void:
+	# Player visual is generated at runtime so class selection can swap colors/weapons instantly.
 	var config: Resource = GameManager.current_class_config
 	var body_color := Color(0.35, 0.45, 0.6, 1.0)
 	var detail_color := Color(0.5, 0.55, 0.65, 1.0)
@@ -79,12 +87,14 @@ func _process(_delta: float) -> void:
 		anim_sprite.rotation = facing_direction.angle() + PI / 2.0
 
 func play_anim(anim_name: StringName) -> void:
+	# Guard avoids restarting current animation and causing jitter.
 	if current_anim != anim_name:
 		current_anim = anim_name
 		if anim_sprite.sprite_frames and anim_sprite.sprite_frames.has_animation(anim_name):
 			anim_sprite.play(anim_name)
 
 func apply_class_config(config: Resource) -> void:
+	# Copy tuned values from ClassConfig into runtime component properties.
 	move_speed = config.move_speed
 	dodge_speed = config.dodge_speed
 	dodge_duration = config.dodge_duration
@@ -118,6 +128,7 @@ func apply_class_config(config: Resource) -> void:
 		card_manager.initialize_deck(config.card_pool)
 
 func get_iso_input() -> Vector2:
+	# Convert top-down movement keys to isometric axis to match sprite movement feel.
 	var raw: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	if raw.length() < 0.1:
 		return Vector2.ZERO
@@ -128,9 +139,11 @@ func get_iso_input() -> Vector2:
 	return iso.normalized()
 
 func update_facing(_direction: Vector2) -> void:
+	# Reserved hook: can rotate/flip sprites if your character mesh needs explicit facing logic.
 	pass
 
 func get_aim_direction() -> Vector2:
+	# Aiming is cursor-based in this prototype; fallback to last facing vector when mouse overlaps player.
 	var mouse_pos: Vector2 = get_global_mouse_position()
 	var dir: Vector2 = (mouse_pos - global_position)
 	if dir.length() < 1.0:
@@ -138,6 +151,7 @@ func get_aim_direction() -> Vector2:
 	return dir.normalized()
 
 func start_attack() -> void:
+	# Start one hit window and let basic-attack script define exact collider movement.
 	var aim: Vector2 = get_aim_direction()
 	play_anim(&"attack")
 
@@ -152,6 +166,7 @@ func start_attack() -> void:
 		hitbox.position = aim * 60.0
 
 func end_attack() -> void:
+	# Always stop attack visuals and collider offsets in one place.
 	if attack_visual:
 		attack_visual.visible = false
 	play_anim(&"idle")
@@ -163,13 +178,16 @@ func end_attack() -> void:
 		hitbox.position = Vector2.ZERO
 
 func set_invincible(value: bool) -> void:
+	# Hurtbox is a collision layer/mask, "monitorable" here controls damage callbacks.
 	hurtbox.set_deferred("monitorable", !value)
 
 func start_dodge_cooldown() -> void:
+	# Start a one-shot timer so dodge can only trigger again after cooldown.
 	var timer: SceneTreeTimer = get_tree().create_timer(dodge_cooldown)
 	timer.timeout.connect(func() -> void: can_dodge = true)
 
 func _flash_hurt() -> void:
+	# Small red flash for quick damage feedback.
 	modulate = Color(1.5, 0.5, 0.5, 1.0)
 	var timer: SceneTreeTimer = get_tree().create_timer(0.1)
 	timer.timeout.connect(func() -> void: modulate = Color(1, 1, 1, 1))

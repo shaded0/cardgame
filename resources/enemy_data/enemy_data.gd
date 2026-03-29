@@ -1,6 +1,9 @@
 class_name EnemyData
 extends Resource
 
+## Serialized enemy tuning values.
+## `base_enemy.tscn` reads this at `_ready()` and copies values into runtime stats.
+
 @export var enemy_name: String = "Slime"
 @export var max_health: float = 40.0
 @export var move_speed: float = 60.0

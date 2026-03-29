@@ -1,6 +1,9 @@
 class_name CardEffect
 extends Resource
 
+## One declarative card effect.
+## Card resolver switches on `type` and applies behavior + visuals.
+
 enum EffectType { DAMAGE, HEAL, BUFF, AOE, PROJECTILE, SUMMON, MANA_GEN, SHIELD }
 enum TargetMode { NEAREST_ENEMY, CURSOR, SELF, ALL_ENEMIES, AREA_AT_CURSOR }
 

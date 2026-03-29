@@ -1,6 +1,9 @@
 class_name PlayerState
 extends Node
 
+## Base class for player states.
+## Concrete states override the three lifecycle hooks.
+
 var state_machine: PlayerStateMachine
 var player: CharacterBody2D
 

@@ -1,15 +1,18 @@
 extends BaseAttack
 
 ## Slow long-range magic bolt
+## The bolt moves with a tween and shows a glow trail while active.
 
 const PROJECTILE_SPEED: float = 540.0
 const PROJECTILE_RANGE: float = 1200.0
 const PROJECTILE_LIFETIME: float = 2.2
 
 func execute(player: CharacterBody2D, direction: Vector2) -> void:
+	# Fire a magic bolt toward cursor direction.
 	_spawn_bolt(player, direction)
 
 func _spawn_bolt(player: CharacterBody2D, direction: Vector2) -> void:
+	# Build a temporary projectile with both impact and trail visual elements.
 	var projectile := Area2D.new()
 	projectile.collision_layer = 4
 	projectile.collision_mask = 32

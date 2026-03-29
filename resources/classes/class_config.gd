@@ -1,6 +1,9 @@
 class_name ClassConfig
 extends Resource
 
+## Serialized class settings loaded from `.tres` files.
+## Project uses this as a single source of truth for stats + starting deck.
+
 @export var class_id: StringName = &"soldier"
 @export var display_name: String = "Soldier"
 
@@ -18,6 +21,7 @@ extends Resource
 @export var mana_per_hit_taken: float = 15.0
 
 # Class-specific
+## Script and card pool are swapped in class-specific resources to change gameplay without code.
 @export var attack_script: Script
 @export var card_pool: Array[Resource] = []
 @export var sprite_frames: SpriteFrames

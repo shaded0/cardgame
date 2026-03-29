@@ -2,7 +2,10 @@ extends PlayerState
 
 var dodge_timer: float = 0.0
 
+## Dodge state: short burst movement + temporary invincibility.
+
 func enter() -> void:
+	# Start dodge and prevent immediate chain-dodge.
 	dodge_timer = player.dodge_duration
 	player.can_dodge = false
 	player.set_invincible(true)
@@ -21,6 +24,7 @@ func enter() -> void:
 	player.modulate.a = 0.5
 
 func physics_update(delta: float) -> void:
+	# Keep moving during dodge then slow to stop.
 	player.move_and_slide()
 	# Decelerate
 	player.velocity = player.velocity.lerp(Vector2.ZERO, 5.0 * delta)
@@ -30,6 +34,7 @@ func physics_update(delta: float) -> void:
 		state_machine.transition_to("idle")
 
 func exit() -> void:
+	# Restore normal collision and start cooldown timer in player component.
 	player.set_invincible(false)
 	player.modulate.a = 1.0
 	# Start dodge cooldown

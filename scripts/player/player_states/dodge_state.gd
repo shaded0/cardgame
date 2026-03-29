@@ -31,7 +31,14 @@ func physics_update(delta: float) -> void:
 
 	dodge_timer -= delta
 	if dodge_timer <= 0.0:
-		state_machine.transition_to("idle")
+		if state_machine.consume_attack_buffer():
+			state_machine.transition_to("attack")
+		elif player.can_dodge and state_machine.consume_dodge_buffer():
+			state_machine.transition_to("dodge")
+		elif player.get_iso_input() != Vector2.ZERO:
+			state_machine.transition_to("move")
+		else:
+			state_machine.transition_to("idle")
 
 func exit() -> void:
 	# Restore normal collision and start cooldown timer in player component.

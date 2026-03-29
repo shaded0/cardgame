@@ -133,6 +133,7 @@ func play_anim(anim_name: StringName) -> void:
 func apply_class_config(config: ClassConfig) -> void:
 	move_speed = config.move_speed
 	dodge_speed = config.dodge_speed
+	dodge_cooldown = config.dodge_cooldown
 	dodge_duration = config.dodge_duration
 	attack_damage = config.attack_damage
 	attack_duration = config.attack_duration
@@ -140,7 +141,7 @@ func apply_class_config(config: ClassConfig) -> void:
 	# Store base values for buff math
 	base_move_speed = config.move_speed
 	base_dodge_speed = config.dodge_speed
-	base_dodge_cooldown = dodge_cooldown
+	base_dodge_cooldown = config.dodge_cooldown
 
 	health_component.max_health = config.max_health
 	health_component.reset_to_full()
@@ -248,7 +249,10 @@ func set_invincible(value: bool) -> void:
 
 func start_dodge_cooldown() -> void:
 	var timer: SceneTreeTimer = get_tree().create_timer(dodge_cooldown)
-	timer.timeout.connect(func() -> void: can_dodge = true)
+	timer.timeout.connect(func() -> void:
+		if is_instance_valid(self):
+			can_dodge = true
+	)
 
 func _flash_hurt() -> void:
 	modulate = Color(1.5, 0.5, 0.5, 1.0)

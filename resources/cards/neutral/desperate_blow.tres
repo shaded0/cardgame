@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/neutral/desperate_blow_plus.tres" id="3_upgrade"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 0
+value = 3.0
+radius = 0.0
+duration = 0.0
+target_mode = 0
+
+[resource]
+script = ExtResource("1")
+card_name = "Desperate Blow"
+card_class = 0
+rarity = 1
+description = "Spend all mana. Deal 3 damage per mana spent. Exhaust."
+mana_cost = 0
+generates_mana = false
+is_x_cost = true
+exhaust = true
+effects = Array[Resource]([SubResource("effect_1")])
+upgraded_version = ExtResource("3_upgrade")

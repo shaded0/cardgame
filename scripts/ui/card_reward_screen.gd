@@ -1,3 +1,4 @@
+class_name CardRewardScreen
 extends CanvasLayer
 
 ## Post-combat card reward screen.

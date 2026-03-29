@@ -1,6 +1,8 @@
 extends ArenaBase
 
-## Large boss arena with corner pillars.
+## Large boss arena with corner pillars. Forces golem boss spawn.
+
+var golem_data: EnemyData = preload("res://resources/enemy_data/golem_boss_data.tres")
 
 func _ready() -> void:
 	arena_radius = 600.0
@@ -8,6 +10,9 @@ func _ready() -> void:
 	enemies_to_spawn = max(enemies_to_spawn, 1)
 	super._ready()
 	_place_obstacles()
+
+func _pick_enemy_data() -> EnemyData:
+	return golem_data
 
 func _place_obstacles() -> void:
 	# Corner pillars

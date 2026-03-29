@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/enemy_data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/enemies/behaviors/block_behavior.gd" id="2_block"]
+
+[resource]
+script = ExtResource("1")
+enemy_name = "Skeleton"
+enemy_type = "skeleton"
+max_health = 60.0
+move_speed = 150.0
+attack_damage = 12.0
+attack_range = 75.0
+attack_cooldown = 1.8
+chase_range = 750.0
+behavior_scripts = [ExtResource("2_block")]
+visual_scale = 1.0

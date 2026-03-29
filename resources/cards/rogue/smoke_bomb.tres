@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/rogue/smoke_bomb_plus.tres" id="3_upgrade"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 2
+value = 80.0
+radius = 0.0
+duration = 4.0
+target_mode = 2
+buff_type = 1
+
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("2")
+type = 2
+value = 0.0
+radius = 0.0
+duration = 4.0
+target_mode = 2
+buff_type = 4
+
+[resource]
+script = ExtResource("1")
+card_name = "Smoke Bomb"
+card_class = 2
+rarity = 2
+description = "Gain +80 speed and enhanced dodge for 4s. Exhaust."
+mana_cost = 20
+generates_mana = false
+exhaust = true
+effects = Array[Resource]([SubResource("effect_1"), SubResource("effect_2")])
+upgraded_version = ExtResource("3_upgrade")

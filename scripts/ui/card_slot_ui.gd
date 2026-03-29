@@ -51,7 +51,7 @@ func set_card_data(card: CardData) -> void:
 	# Bind resource values to visible UI labels.
 	current_card = card
 	card_name_label.text = card.card_name
-	mana_cost_label.text = str(card.mana_cost)
+	mana_cost_label.text = "X" if card.is_x_cost else str(card.mana_cost)
 	visible = true
 
 	# Pop-in animation when a new card arrives

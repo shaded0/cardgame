@@ -190,7 +190,9 @@ func _on_room_cleared() -> void:
 func _show_card_rewards() -> void:
 	## Show card reward screen before returning to map.
 	var reward_scene: PackedScene = load("res://scenes/ui/card_reward_screen.tscn")
-	var reward_screen: CanvasLayer = reward_scene.instantiate()
+	var reward_screen: CardRewardScreen = reward_scene.instantiate() as CardRewardScreen
+	if reward_screen == null:
+		return
 
 	var is_elite: bool = GameManager.current_room and GameManager.current_room.room_type == RoomData.RoomType.ELITE
 	var class_id: StringName = &"soldier"
@@ -262,14 +264,28 @@ func _check_room_clear() -> void:
 func _spawn_enemy_in_radius(min_radius: float, max_radius: float) -> Node:
 	return _spawn_enemy_at_offset(_get_spawn_offset(min_radius, max_radius))
 
+func _pick_enemy_data() -> EnemyData:
+	## Pick a random enemy type from the room's pool, falling back to slime.
+	if GameManager.current_room and not GameManager.current_room.enemy_types.is_empty():
+		return GameManager.current_room.enemy_types.pick_random()
+	return slime_data
+
 func _spawn_enemy_at_offset(offset: Vector2) -> Node:
 	if enemy_scene == null or entity_layer == null:
 		return null
 
-	var enemy = enemy_scene.instantiate()
-	enemy.set("enemy_data", slime_data)
+	var data: EnemyData = _pick_enemy_data()
+	var enemy: Node2D = enemy_scene.instantiate() as Node2D
+	if enemy == null:
+		return null
+	enemy.set("enemy_data", data)
 	enemy.global_position = offset
 	entity_layer.add_child(enemy)
+
+	# Apply tier-based difficulty scaling
+	if GameManager.current_room:
+		DifficultyScaler.scale_enemy(enemy, GameManager.current_room.tier)
+
 	return enemy
 
 func _get_spawn_offset(min_radius: float, max_radius: float) -> Vector2:

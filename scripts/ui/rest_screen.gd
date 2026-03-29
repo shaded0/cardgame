@@ -1,3 +1,4 @@
+class_name RestScreen
 extends CanvasLayer
 
 ## REST room overlay: choose to heal fully or upgrade one card.

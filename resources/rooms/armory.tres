@@ -1,14 +1,17 @@
-[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="RoomData" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemy_data/slime_data.tres" id="2_slime"]
+[ext_resource type="Resource" path="res://resources/enemy_data/skeleton_data.tres" id="3_skel"]
 
 [resource]
 script = ExtResource("1")
 room_id = "armory"
 display_name = "Armory"
-description = "An old weapons room. Tougher foes guard it."
+description = "An old weapons room. Skeleton warriors guard the remains."
 room_type = 0
 arena_scene_path = "res://scenes/levels/arena_chamber.tscn"
 enemy_count = 5
 tier = 1
 connections = Array[String](["rest_chamber"])
+enemy_types = Array[Resource]([ExtResource("3_skel"), ExtResource("3_skel"), ExtResource("2_slime")])

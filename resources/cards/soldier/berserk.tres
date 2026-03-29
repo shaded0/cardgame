@@ -1,0 +1,35 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/soldier/berserk_plus.tres" id="3_upgrade"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 2
+value = 50.0
+radius = 0.0
+duration = 8.0
+target_mode = 2
+buff_type = 0
+
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("2")
+type = 2
+value = 60.0
+radius = 0.0
+duration = 8.0
+target_mode = 2
+buff_type = 1
+
+[resource]
+script = ExtResource("1")
+card_name = "Berserk"
+card_class = 1
+rarity = 2
+description = "Gain +50 damage and +60 speed for 8s. Exhaust."
+mana_cost = 35
+generates_mana = false
+exhaust = true
+effects = Array[Resource]([SubResource("effect_1"), SubResource("effect_2")])
+upgraded_version = ExtResource("3_upgrade")

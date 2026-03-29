@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 6
+value = 0.0
+radius = 0.0
+duration = 0.0
+target_mode = 2
+
+[resource]
+script = ExtResource("1")
+card_name = "Adrenaline Rush+"
+card_class = 2
+description = "A rush of adrenaline generates mana."
+mana_cost = 0
+generates_mana = 30
+is_upgraded = true
+effects = Array[Resource]([SubResource("effect_1")])

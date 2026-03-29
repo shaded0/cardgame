@@ -88,6 +88,6 @@ func _update_card_playability() -> void:
 		var slot = card_slots[i]
 		if slot.has_method("set_playable"):
 			if i < card_mgr.hand.size() and card_mgr.hand[i] != null:
-				slot.set_playable(mana.current_mana >= card_mgr.hand[i].mana_cost)
+				slot.set_playable(card_mgr.can_play_card(card_mgr.hand[i], mana.current_mana))
 			else:
 				slot.set_playable(false)

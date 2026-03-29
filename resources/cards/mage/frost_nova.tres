@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://resources/cards/card_data.gd" id="1"]
+[ext_resource type="Script" path="res://resources/cards/card_effect.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/cards/mage/frost_nova_plus.tres" id="3_upgrade"]
+
+[sub_resource type="Resource" id="effect_1"]
+script = ExtResource("2")
+type = 3
+value = 8.0
+radius = 80.0
+duration = 0.0
+target_mode = 4
+
+[sub_resource type="Resource" id="effect_2"]
+script = ExtResource("2")
+type = 8
+value = 0.0
+radius = 0.0
+duration = 6.0
+target_mode = 0
+debuff_type = 1
+
+[resource]
+script = ExtResource("1")
+card_name = "Frost Nova"
+card_class = 3
+rarity = 1
+description = "Deal 8 AOE damage and apply Weak to nearest enemy for 6s."
+mana_cost = 25
+generates_mana = false
+pauses_game = true
+effects = Array[Resource]([SubResource("effect_1"), SubResource("effect_2")])
+upgraded_version = ExtResource("3_upgrade")

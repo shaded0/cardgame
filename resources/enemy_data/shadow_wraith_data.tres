@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/enemy_data/enemy_data.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/enemies/behaviors/teleport_behavior.gd" id="2_teleport"]
+
+[resource]
+script = ExtResource("1")
+enemy_name = "Shadow Wraith"
+enemy_type = "shadow_wraith"
+max_health = 35.0
+move_speed = 360.0
+attack_damage = 15.0
+attack_range = 90.0
+attack_cooldown = 2.5
+chase_range = 1050.0
+behavior_scripts = [ExtResource("2_teleport")]
+visual_scale = 1.0

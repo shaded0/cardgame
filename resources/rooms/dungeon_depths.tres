@@ -1,14 +1,18 @@
-[gd_resource type="Resource" script_class="RoomData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="RoomData" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://resources/rooms/room_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemy_data/skeleton_data.tres" id="2_skel"]
+[ext_resource type="Resource" path="res://resources/enemy_data/fire_imp_data.tres" id="3_imp"]
+[ext_resource type="Resource" path="res://resources/enemy_data/shadow_wraith_data.tres" id="4_wraith"]
 
 [resource]
 script = ExtResource("1")
 room_id = "dungeon_depths"
 display_name = "Dungeon Depths"
-description = "The deepest level. Dangerous creatures dwell here."
+description = "The deepest level. Skeletons, imps, and wraiths dwell here."
 room_type = 0
 arena_scene_path = "res://scenes/levels/arena_halls.tscn"
 enemy_count = 6
 tier = 3
 connections = Array[String](["boss_chamber"])
+enemy_types = Array[Resource]([ExtResource("2_skel"), ExtResource("3_imp"), ExtResource("4_wraith")])

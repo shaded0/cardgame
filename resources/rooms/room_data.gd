@@ -11,3 +11,4 @@ enum RoomType { COMBAT, ELITE, REST, BOSS }
 @export var enemy_count: int = 4
 @export var tier: int = 0  ## Vertical position on the map (0 = bottom/start)
 @export var connections: Array[String] = []  ## room_ids this connects to
+@export var enemy_types: Array[EnemyData] = []  ## Pool of enemy types to spawn (picked randomly)

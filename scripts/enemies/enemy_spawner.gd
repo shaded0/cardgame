@@ -30,11 +30,16 @@ func _try_spawn() -> void:
 	if enemy_scene == null:
 		return
 
-	var enemy: Node = enemy_scene.instantiate()
+	var enemy: Node2D = enemy_scene.instantiate() as Node2D
+	if enemy == null:
+		return
 
 	# Random position around spawner
 	var angle: float = randf() * TAU
 	var offset: Vector2 = Vector2(cos(angle), sin(angle) * 0.5) * spawn_radius
 	enemy.global_position = global_position + offset
 
-	get_parent().add_child(enemy)
+	var parent: Node = get_parent()
+	if parent == null:
+		return
+	parent.add_child(enemy)

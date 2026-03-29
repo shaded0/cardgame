@@ -5,6 +5,7 @@ extends Resource
 ## `base_enemy.tscn` reads this at `_ready()` and copies values into runtime stats.
 
 @export var enemy_name: String = "Slime"
+@export var enemy_type: String = "slime"
 @export var max_health: float = 40.0
 @export var move_speed: float = 60.0
 @export var attack_damage: float = 8.0
@@ -12,3 +13,5 @@ extends Resource
 @export var attack_cooldown: float = 1.5
 @export var chase_range: float = 200.0
 @export var sprite_frames: SpriteFrames
+@export var behavior_scripts: Array[Script] = []
+@export var visual_scale: float = 1.0

@@ -56,14 +56,10 @@ func try_play_card(slot_index: int) -> void:
 	if mana_comp == null:
 		return
 
-	# X-cost: spend ALL current mana.
-	var mana_to_spend: float
-	if card.is_x_cost:
-		mana_to_spend = mana_comp.current_mana
-		if mana_to_spend <= 0:
-			return
-	else:
-		mana_to_spend = float(card.mana_cost)
+	if not can_play_card(card, mana_comp.current_mana):
+		return
+
+	var mana_to_spend: float = _get_mana_to_spend(card, mana_comp.current_mana)
 
 	if not mana_comp.spend_mana(mana_to_spend):
 		return
@@ -100,9 +96,21 @@ func _replace_card(slot_index: int, played_card: CardData) -> void:
 func _pause_after_delay(delay: float) -> void:
 	var timer: SceneTreeTimer = get_tree().create_timer(delay, true, false, true)
 	timer.timeout.connect(func() -> void:
+		if not is_instance_valid(self) or not is_inside_tree():
+			return
 		if not get_tree().paused:
 			GameManager.toggle_pause()
 	)
+
+func can_play_card(card: CardData, available_mana: float) -> bool:
+	if card == null:
+		return false
+	return _get_mana_to_spend(card, available_mana) > 0.0
+
+func _get_mana_to_spend(card: CardData, available_mana: float) -> float:
+	if card.is_x_cost:
+		return maxf(available_mana, 0.0)
+	return float(card.mana_cost) if available_mana >= card.mana_cost else 0.0
 
 func _draw_next_card() -> CardData:
 	if draw_pile.is_empty():

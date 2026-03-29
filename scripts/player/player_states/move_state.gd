@@ -7,6 +7,13 @@ func enter() -> void:
 	player.play_anim(&"run")
 
 func physics_update(_delta: float) -> void:
+	if state_machine.consume_attack_buffer():
+		state_machine.transition_to("attack")
+		return
+	if player.can_dodge and state_machine.consume_dodge_buffer():
+		state_machine.transition_to("dodge")
+		return
+
 	# Query isometric input from player node and switch back if no movement input.
 	var iso_dir: Vector2 = player.get_iso_input()
 	if iso_dir == Vector2.ZERO:
@@ -19,7 +26,7 @@ func physics_update(_delta: float) -> void:
 
 func handle_input(event: InputEvent) -> void:
 	# Input can interrupt move state for attack/dodge actions.
-	if event.is_action_pressed("basic_attack"):
+	if event.is_action_pressed("basic_attack") and state_machine.consume_attack_buffer():
 		state_machine.transition_to("attack")
-	elif event.is_action_pressed("dodge") and player.can_dodge:
+	elif event.is_action_pressed("dodge") and player.can_dodge and state_machine.consume_dodge_buffer():
 		state_machine.transition_to("dodge")

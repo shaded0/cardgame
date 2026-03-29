@@ -154,7 +154,9 @@ func _on_room_clicked(room: RoomData) -> void:
 	if room.room_type == RoomData.RoomType.REST:
 		# Show rest screen overlay with heal/upgrade choice.
 		var rest_scene: PackedScene = load("res://scenes/ui/rest_screen.tscn")
-		var rest_screen: CanvasLayer = rest_scene.instantiate()
+		var rest_screen: RestScreen = rest_scene.instantiate() as RestScreen
+		if rest_screen == null:
+			return
 		add_child(rest_screen)
 		rest_screen.rest_completed.connect(func() -> void:
 			GameManager.enter_room(room)

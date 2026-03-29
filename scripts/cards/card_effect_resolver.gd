@@ -76,7 +76,10 @@ func _resolve_projectile(effect: CardEffect) -> void:
 		_resolve_damage(effect)
 		return
 
-	var projectile: Node = effect.effect_scene.instantiate()
+	var projectile: Node2D = effect.effect_scene.instantiate() as Node2D
+	if projectile == null:
+		_resolve_damage(effect)
+		return
 	projectile.global_position = player.global_position
 
 	var target_pos: Vector2 = player.get_global_mouse_position()
@@ -84,7 +87,10 @@ func _resolve_projectile(effect: CardEffect) -> void:
 	if projectile.has_method("setup"):
 		projectile.call("setup", direction, effect.value)
 
-	player.get_parent().add_child(projectile)
+	var parent: Node = player.get_parent()
+	if parent == null:
+		return
+	parent.add_child(projectile)
 
 func _resolve_aoe(effect: CardEffect, is_x_cost: bool = false) -> void:
 	var enemies: Array[Node] = GameManager.get_enemies()
@@ -96,6 +102,8 @@ func _resolve_aoe(effect: CardEffect, is_x_cost: bool = false) -> void:
 	SpellEffectVisual.spawn_burst(player.get_parent(), center, effect.radius, Color(1.0, 0.5, 0.2, 0.5))
 
 	for enemy in enemies:
+		if not (enemy is Node2D) or not is_instance_valid(enemy):
+			continue
 		if enemy.global_position.distance_to(center) <= effect.radius:
 			if enemy.has_node("HealthComponent"):
 				enemy.get_node("HealthComponent").take_damage(dmg)
@@ -180,6 +188,8 @@ func _find_nearest_enemy() -> Node2D:
 	var nearest: Node2D = null
 	var nearest_dist: float = INF
 	for enemy in enemies:
+		if not (enemy is Node2D) or not is_instance_valid(enemy):
+			continue
 		var dist: float = player.global_position.distance_to(enemy.global_position)
 		if dist < nearest_dist:
 			nearest_dist = dist

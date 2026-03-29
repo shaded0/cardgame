@@ -6,6 +6,8 @@ extends Control
 var card_slots: Array = []
 
 func _ready() -> void:
+	# HUD must update even while paused (card playability, mana changes)
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	# Wait a frame for player to initialize
 	await get_tree().process_frame
 	_connect_to_player()

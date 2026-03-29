@@ -18,4 +18,5 @@ card_class = 3
 description = "Hurl a fireball at the nearest enemy."
 mana_cost = 20
 generates_mana = 0
+pauses_game = true
 effects = Array[Resource]([SubResource("effect_1")])

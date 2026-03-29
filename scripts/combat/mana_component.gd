@@ -9,6 +9,9 @@ signal mana_changed(current: float, maximum: float)
 
 var current_mana: float = 0.0
 
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
 func add_mana(amount: float) -> void:
 	var old_mana: float = current_mana
 	current_mana = min(current_mana + amount, max_mana)

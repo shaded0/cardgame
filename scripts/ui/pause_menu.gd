@@ -1,7 +1,7 @@
 extends Control
 
 ## Pause menu — visible when game is paused.
-## process_mode = PROCESS_MODE_WHEN_PAUSED so it receives input while tree is paused.
+## Cards can be played while paused using number keys.
 
 @onready var card_details: VBoxContainer = $Panel/VBoxContainer/CardDetails
 @onready var resume_btn: Button = $Panel/VBoxContainer/ResumeButton
@@ -25,27 +25,44 @@ func _on_game_resumed() -> void:
 	visible = false
 
 func _populate_card_details() -> void:
-	# Clear existing card info
 	for child in card_details.get_children():
 		child.queue_free()
 
-	# Find player and show current hand
 	var players: Array[Node] = get_tree().get_nodes_in_group("player")
 	if players.size() == 0:
 		return
 
-	var player: CharacterBody2D = players[0]
+	var player: CharacterBody2D = players[0] as CharacterBody2D
 	var card_mgr: CardManager = player.get_node("CardManager")
+	var mana_comp: ManaComponent = player.get_node("ManaComponent")
+
+	# Hint text
+	var hint := Label.new()
+	hint.add_theme_font_size_override("font_size", 5)
+	hint.add_theme_color_override("font_color", Color(0.5, 0.7, 1.0, 0.8))
+	hint.text = "Press 1-4 to play cards while paused"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_details.add_child(hint)
 
 	for i in range(card_mgr.hand.size()):
-		var card = card_mgr.hand[i]
+		var card: Resource = card_mgr.hand[i]
 		if card == null:
 			continue
 
 		var label := Label.new()
 		label.add_theme_font_size_override("font_size", 6)
-		label.text = "[%d] %s (%d) - %s" % [i + 1, card.card_name, card.mana_cost, card.description]
 		label.autowrap_mode = TextServer.AUTOWRAP_WORD
+
+		var can_afford: bool = mana_comp.current_mana >= card.mana_cost
+		var cost_str: String = str(card.mana_cost)
+
+		label.text = "[%d] %s (%s mana)\n    %s" % [i + 1, card.card_name, cost_str, card.description]
+
+		if can_afford:
+			label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+		else:
+			label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 0.6))
+
 		card_details.add_child(label)
 
 func _on_resume() -> void:

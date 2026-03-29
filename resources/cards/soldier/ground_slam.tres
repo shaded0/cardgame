@@ -18,4 +18,5 @@ card_class = 1
 description = "Slam the ground, damaging all nearby enemies."
 mana_cost = 25
 generates_mana = 0
+pauses_game = true
 effects = Array[Resource]([SubResource("effect_1")])

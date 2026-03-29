@@ -4,6 +4,7 @@ extends Node
 var player: CharacterBody2D
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	player = get_parent().get_parent() as CharacterBody2D
 	var card_manager: CardManager = get_parent()
 	card_manager.card_played.connect(_on_card_played)

@@ -23,8 +23,9 @@ func _ready() -> void:
 	add_to_group("enemies")
 	hitbox_shape.disabled = true
 
-	# Placeholder sprite - larger and more visible
-	sprite.texture = PlaceholderSprites.create_circle_texture(8, Color(0.9, 0.3, 0.3, 1.0))
+	# Directional arrow sprite for enemies
+	sprite.texture = PlaceholderSprites.create_arrow_texture(14, Color(0.9, 0.3, 0.3, 1.0))
+	sprite.offset = Vector2(0, -6)
 
 	if enemy_data:
 		move_speed = enemy_data.move_speed
@@ -75,11 +76,8 @@ func _chase_player(_delta: float) -> void:
 	var direction: Vector2 = (player.global_position - global_position).normalized()
 	velocity = direction * move_speed
 
-	# Flip sprite
-	if direction.x < 0:
-		sprite.flip_h = true
-	elif direction.x > 0:
-		sprite.flip_h = false
+	# Rotate sprite to face player (arrow points up, offset by 90 deg)
+	sprite.rotation = direction.angle() + PI / 2.0
 
 	move_and_slide()
 

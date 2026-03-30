@@ -101,13 +101,24 @@ func draw_floor(palette: Dictionary, floor_theme: int, grid_count: int, tile_w: 
 				Vector2(screen_x, screen_y + hh),
 				Vector2(screen_x - hw, screen_y),
 			])
+
+			var is_crumbled: bool = false
+			if edge_dist == grid_count:
+				points = _make_crumbled_points(points, tile_hash)
+				is_crumbled = true
+			elif edge_dist == grid_count - 1 and tile_hash < 0.3:
+				points = _make_chipped_points(points, tile_hash)
+
 			_owner.draw_colored_polygon(points, floor_color)
-			_draw_tile_thickness(points, floor_color)
+			if not is_crumbled:
+				_draw_tile_thickness(points, floor_color)
 
 			var line_col: Color = active_palette["line_color"] if edge_dist < grid_count - 1 else active_palette["line_edge"]
-			_owner.draw_polyline(PackedVector2Array([
-				points[0], points[1], points[2], points[3], points[0]
-			]), line_col, 1.0)
+			var outline := PackedVector2Array()
+			for pt_idx in range(points.size()):
+				outline.append(points[pt_idx])
+			outline.append(points[0])
+			_owner.draw_polyline(outline, line_col, 1.0)
 
 			if tile_hash < 0.15:
 				_draw_tile_cracks(points, floor_color, tile_hash)

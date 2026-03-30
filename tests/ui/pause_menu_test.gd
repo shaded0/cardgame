@@ -10,7 +10,7 @@ func before_each() -> void:
 	_saved_pending_scene_path = GameManager._pending_scene_path
 
 func after_each() -> void:
-	get_tree().paused = false
+	tree.paused = false
 	GameManager._transitioning = _saved_transitioning
 	GameManager._pending_scene_path = _saved_pending_scene_path
 	for child in GameManager.get_children():
@@ -45,10 +45,10 @@ func test_pause_menu_resume_unpauses_tree_and_emits_resume_signal() -> void:
 		resumed_count += 1
 	, CONNECT_ONE_SHOT)
 
-	get_tree().paused = true
+	tree.paused = true
 	pause_menu._on_resume()
 
-	assert_false(get_tree().paused, "Resuming from the pause menu should unpause the scene tree.")
+	assert_false(tree.paused, "Resuming from the pause menu should unpause the scene tree.")
 	assert_eq(resumed_count, 1, "Resuming from the pause menu should emit game_resumed once.")
 
 func test_pause_menu_resume_button_triggers_resume_handler() -> void:
@@ -60,11 +60,11 @@ func test_pause_menu_resume_button_triggers_resume_handler() -> void:
 		resumed_count += 1
 	, CONNECT_ONE_SHOT)
 
-	get_tree().paused = true
+	tree.paused = true
 	var resume_button: Button = pause_menu.get_node("Panel/VBoxContainer/ResumeButton")
 	resume_button.emit_signal("pressed")
 
-	assert_false(get_tree().paused, "Pressing the Resume button should unpause the scene tree.")
+	assert_false(tree.paused, "Pressing the Resume button should unpause the scene tree.")
 	assert_eq(resumed_count, 1, "Pressing the Resume button should route through the same resume flow.")
 
 func test_pause_menu_disconnects_global_pause_signals_on_exit() -> void:
@@ -77,7 +77,7 @@ func test_pause_menu_disconnects_global_pause_signals_on_exit() -> void:
 	assert_true(GameManager.game_resumed.is_connected(resumed_cb), "Pause menu should subscribe to global resume events while active.")
 
 	pause_menu.queue_free()
-	root.propagate_notification(Node.NOTIFICATION_EXIT_TREE)
+	await tree.process_frame
 
 	assert_false(GameManager.game_paused.is_connected(paused_cb), "Pause menu should disconnect from global pause events when freed.")
 	assert_false(GameManager.game_resumed.is_connected(resumed_cb), "Pause menu should disconnect from global resume events when freed.")
@@ -91,10 +91,10 @@ func test_pause_menu_quit_uses_game_manager_resume_path() -> void:
 		resumed_count += 1
 	, CONNECT_ONE_SHOT)
 
-	get_tree().paused = true
+	tree.paused = true
 	pause_menu._on_quit()
 
-	assert_false(get_tree().paused, "Quitting from the pause menu should still unpause the tree before changing scenes.")
+	assert_false(tree.paused, "Quitting from the pause menu should still unpause the tree before changing scenes.")
 	assert_eq(resumed_count, 1, "Quitting from pause should emit game_resumed through GameManager so other pause listeners can clean up.")
 	assert_eq(GameManager._pending_scene_path, GameManager.CLASS_SELECT_SCENE_PATH, "Quitting from pause should queue the class-select scene transition.")
 
@@ -102,9 +102,9 @@ func test_pause_menu_quit_button_routes_to_class_select_transition() -> void:
 	var pause_menu: Control = PauseMenuScene.instantiate()
 	root.add_child(pause_menu)
 
-	get_tree().paused = true
+	tree.paused = true
 	var quit_button: Button = pause_menu.get_node("Panel/VBoxContainer/QuitButton")
 	quit_button.emit_signal("pressed")
 
-	assert_false(get_tree().paused, "Pressing Quit to Menu should unpause the scene tree before changing scenes.")
+	assert_false(tree.paused, "Pressing Quit to Menu should unpause the scene tree before changing scenes.")
 	assert_eq(GameManager._pending_scene_path, GameManager.CLASS_SELECT_SCENE_PATH, "Pressing Quit to Menu should route through the class-select transition flow.")

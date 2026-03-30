@@ -26,6 +26,7 @@ const CLASS_COLORS := {
 
 var _title_time: float = 0.0
 var _ember_particles: Array[Dictionary] = []
+var _is_selecting: bool = false
 
 func _ready() -> void:
 	# Defensive reset in case the previous scene left the tree paused.
@@ -204,11 +205,16 @@ func _show_description(text: String) -> void:
 	tween.tween_property(description_label, "modulate:a", 1.0, 0.2)
 
 func _select_class(config_path: String) -> void:
+	if _is_selecting:
+		return
 	# Loading a resource by path lets designers tune stats in external `.tres` files.
 	var config := load(config_path) as ClassConfig
 	if config == null:
 		push_error("Failed to load class config: " + config_path)
 		return
+	_is_selecting = true
+	for btn in [soldier_btn, rogue_btn, mage_btn]:
+		btn.disabled = true
 
 	# Flash effect on selection
 	var flash := ColorRect.new()

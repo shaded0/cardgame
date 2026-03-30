@@ -1,11 +1,16 @@
 extends "res://tests/support/test_case.gd"
 
 const Factory = preload("res://tests/support/test_factory.gd")
-const ArenaBaseScript = preload("res://scripts/levels/arena_base.gd")
 const ArenaFloorRendererScript = preload("res://scripts/levels/arena_floor_renderer.gd")
 const ArenaFlowScript = preload("res://scripts/levels/arena_flow.gd")
 
 var _saved_current_room: RoomData = null
+
+class ArenaBaseDouble:
+	extends ArenaBase
+
+	func _ready() -> void:
+		pass
 
 func before_each() -> void:
 	_saved_current_room = GameManager.current_room
@@ -68,8 +73,8 @@ func test_flow_room_clear_waits_for_wave_to_spawn_and_all_enemies_to_die() -> vo
 	root.add_child(enemy)
 	assert_false(flow.room_cleared(true, false), "Any surviving enemy should keep the room uncleared.")
 
+	enemy.remove_from_group("enemies")
 	enemy.queue_free()
-	root.propagate_notification(Node.NOTIFICATION_PREDELETE)
 	assert_true(flow.room_cleared(true, false), "Once the wave has spawned and enemies are gone, the room should clear.")
 	assert_true(flow.room_cleared(true, true), "Once cleared, the flow helper should keep the room in the cleared state.")
 
@@ -101,7 +106,7 @@ func test_arena_base_adds_decorations_and_grass_to_entity_layer() -> void:
 	assert_true(arena.entity_layer.get_child(1) is GrassPatch and arena.entity_layer.get_child(2) is GrassPatch, "Grass cluster helper should still instantiate the requested number of grass patches.")
 
 func _make_arena_under_test() -> ArenaBase:
-	var arena := ArenaBaseScript.new()
+	var arena := ArenaBaseDouble.new()
 	arena.name = "ArenaUnderTest"
 	var entity_layer := Node2D.new()
 	entity_layer.name = "EntityLayer"

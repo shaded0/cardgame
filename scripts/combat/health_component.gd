@@ -37,7 +37,11 @@ func take_damage(amount: float) -> void:
 
 func heal(amount: float) -> void:
 	# Clamp to max_health, then notify UI.
+	if amount <= 0.0:
+		return
 	current_health = min(current_health + amount, max_health)
+	if current_health > 0.0:
+		_is_dead = false
 	_emit_health_changed()
 
 func add_shield(amount: float) -> void:

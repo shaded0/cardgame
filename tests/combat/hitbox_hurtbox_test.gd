@@ -3,6 +3,9 @@ extends "res://tests/support/test_case.gd"
 const HitboxScript = preload("res://scripts/combat/hitbox.gd")
 const HurtboxScript = preload("res://scripts/combat/hurtbox.gd")
 
+func after_each() -> void:
+	Engine.time_scale = 1.0
+
 func test_hitbox_notifies_hurtbox_when_overlap_occurs() -> void:
 	var hitbox = HitboxScript.new()
 	var hurtbox = HurtboxScript.new()
@@ -34,3 +37,13 @@ func test_invincible_hurtbox_suppresses_received_hit_signal() -> void:
 	hitbox._on_area_entered(hurtbox)
 
 	assert_eq(received_count, 0, "Invincible hurtboxes should ignore incoming hits.")
+
+func test_hit_stop_restores_previous_time_scale_after_completion() -> void:
+	var hitbox = HitboxScript.new()
+	root.add_child(hitbox)
+	await tree.process_frame
+
+	Engine.time_scale = 0.45
+	await hitbox._do_hit_stop()
+
+	assert_near(Engine.time_scale, 0.45, 0.001, "Hitstop should restore the previous engine time scale instead of forcing normal speed and stomping other slowdown effects.")

@@ -48,6 +48,7 @@ func _do_hit_stop() -> void:
 	if tree == null:
 		return
 	# 40ms freeze — short enough to feel snappy, long enough to notice.
+	var previous_time_scale: float = Engine.time_scale
 	Engine.time_scale = 0.05
 	await tree.create_timer(0.04, true, false, true).timeout
-	Engine.time_scale = 1.0
+	Engine.time_scale = previous_time_scale

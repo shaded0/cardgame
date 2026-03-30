@@ -9,10 +9,12 @@ extends Control
 var card_slots: Array = []
 var draw_counter_label: Label = null
 var _deck_viewer: CanvasLayer = null
+var _bar_panel: PanelContainer = null
 
 func _ready() -> void:
 	# HUD needs to refresh while paused so card availability still updates.
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_create_bar_panel()
 	# Wait one frame so the player node has had a chance to finish _ready().
 	await get_tree().process_frame
 	_connect_to_player()
@@ -88,6 +90,15 @@ func _find_player() -> PlayerController:
 	return arena.find_child("Player", true, false) as PlayerController
 
 func _animate_entrance() -> void:
+	# Panel slides in from left
+	if _bar_panel:
+		var panel_target_x := _bar_panel.position.x
+		_bar_panel.position.x = -_bar_panel.size.x
+		_bar_panel.modulate.a = 0.0
+		var panel_tween := _bar_panel.create_tween().set_parallel(true)
+		panel_tween.tween_property(_bar_panel, "position:x", panel_target_x, 0.4).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		panel_tween.tween_property(_bar_panel, "modulate:a", 1.0, 0.3)
+
 	# Health bar slides in from left
 	var hb_target_x := health_bar.position.x
 	health_bar.position.x = -health_bar.size.x
@@ -117,6 +128,29 @@ func _animate_entrance() -> void:
 	var ch_tween := card_hand.create_tween().set_parallel(true)
 	ch_tween.tween_property(card_hand, "position:y", ch_target_y, 0.5).set_delay(0.2).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	ch_tween.tween_property(card_hand, "modulate:a", 1.0, 0.35).set_delay(0.2)
+
+func _create_bar_panel() -> void:
+	_bar_panel = PanelContainer.new()
+	_bar_panel.position = Vector2(8, 8)
+	_bar_panel.size = Vector2(326, 72)
+	_bar_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.04, 0.04, 0.08, 0.85)
+	panel_style.corner_radius_top_left = 6
+	panel_style.corner_radius_top_right = 6
+	panel_style.corner_radius_bottom_right = 6
+	panel_style.corner_radius_bottom_left = 6
+	panel_style.border_color = Color(0.35, 0.2, 0.15, 0.4)
+	panel_style.set_border_width_all(1)
+	panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.4)
+	panel_style.shadow_size = 4
+	panel_style.set_content_margin_all(8)
+	_bar_panel.add_theme_stylebox_override("panel", panel_style)
+
+	# Insert behind bars so it renders underneath
+	add_child(_bar_panel)
+	move_child(_bar_panel, 0)
 
 func _on_health_changed(current: float, maximum: float) -> void:
 	health_bar.set_health(current, maximum)

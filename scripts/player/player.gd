@@ -381,9 +381,6 @@ func start_attack() -> bool:
 		attack_visual.position = aim * 55.0
 		attack_visual.visible = true
 
-	# Apply buff-modified damage to hitbox for this swing.
-	hitbox.damage = get_effective_damage()
-
 	var attack_controller: Node = _ensure_attack_controller()
 	if attack_controller and attack_controller.has_method("execute"):
 		attack_controller.execute(self, aim)
@@ -394,7 +391,8 @@ func start_attack() -> bool:
 		_log_attack("start_attack_failed_missing_controller")
 		return false
 	else:
-		if not enable_attack_hitbox(aim * 60.0):
+		var attack_damage_value: float = get_effective_damage()
+		if not enable_attack_hitbox(aim * 60.0, attack_damage_value):
 			_attack_active = false
 			_disable_attack_hitbox()
 			_log_attack("start_attack_failed_enable_hitbox")

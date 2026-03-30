@@ -2,6 +2,7 @@ extends "res://tests/support/test_case.gd"
 
 const Factory = preload("res://tests/support/test_factory.gd")
 const SoldierAttackScript = preload("res://scripts/player/basic_attacks/soldier_attack.gd")
+const RogueAttackScript = preload("res://scripts/player/basic_attacks/rogue_attack.gd")
 
 var _previous_class_config: ClassConfig = null
 var _previous_attack_logging: bool = true
@@ -84,3 +85,25 @@ func test_force_end_attack_clears_tracked_dodge_fx_and_recovers() -> void:
 	assert_true(dodge_fx.is_queued_for_deletion(), "Force-ending attacks should sweep any tagged dodge afterimages.")
 	assert_eq(player.state_machine.current_state.name.to_lower(), "idle", "Force-ending attacks should recover the player to a neutral state.")
 	assert_false(player._attack_active, "Force-ending attacks should clear active attack state.")
+
+func test_soldier_attack_consumes_one_empower_stack_per_attack() -> void:
+	var config := Factory.make_class_config(SoldierAttackScript)
+	var player := Factory.make_player_controller(root, config)
+	var buff_system: BuffSystem = player.get_node("BuffSystem")
+	buff_system.add_buff(Buff.create(Buff.Type.EMPOWER_NEXT, 12.0, 0.0, 2))
+
+	var started := player.start_attack()
+
+	assert_true(started, "Soldier attacks should start successfully in the test harness.")
+	assert_eq(buff_system.empowered_attacks, 1, "Starting one soldier attack should consume exactly one empower stack, not double-spend it through both the player and attack script paths.")
+
+func test_projectile_attack_consumes_one_empower_stack_per_attack() -> void:
+	var config := Factory.make_class_config(RogueAttackScript)
+	var player := Factory.make_player_controller(root, config)
+	var buff_system: BuffSystem = player.get_node("BuffSystem")
+	buff_system.add_buff(Buff.create(Buff.Type.EMPOWER_NEXT, 12.0, 0.0, 2))
+
+	var started := player.start_attack()
+
+	assert_true(started, "Projectile attacks should start successfully in the test harness.")
+	assert_eq(buff_system.empowered_attacks, 1, "Launching one projectile attack should consume exactly one empower stack instead of pre-consuming one before the attack script also claims damage.")

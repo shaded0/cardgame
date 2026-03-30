@@ -25,7 +25,7 @@ func spawn_enemies(enemies_to_spawn: int) -> bool:
 	for i in range(enemies_to_spawn):
 		var enemy: Node = _owner.call("_spawn_enemy_in_radius", 300.0, 650.0)
 		if enemy and enemy.has_method("set_aggro_delay"):
-			enemy.set_aggro_delay(i * 0.8)
+			enemy.set_aggro_delay(i * 0.5)
 	return true
 
 func room_cleared(enemies_spawned: bool, room_is_cleared: bool) -> bool:

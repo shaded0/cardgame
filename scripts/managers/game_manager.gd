@@ -137,7 +137,8 @@ func _change_scene(path: String) -> void:
 
 	_transitioning = true
 
-	# Fade to black, switch scene, then fade in
+	# Fade to black, switch scenes, then fade back in. Keep listening for
+	# redirects during the transition so quick menu actions do not get dropped.
 	var layer := CanvasLayer.new()
 	layer.layer = 100
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -149,20 +150,25 @@ func _change_scene(path: String) -> void:
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(rect)
 
-	var fade_out := create_tween()
-	fade_out.tween_property(rect, "color:a", 1.0, 0.2).set_ease(Tween.EASE_IN)
-	await fade_out.finished
+	while true:
+		if rect.color.a < 1.0:
+			var fade_out := create_tween()
+			fade_out.tween_property(rect, "color:a", 1.0, 0.2).set_ease(Tween.EASE_IN)
+			await fade_out.finished
 
-	while not _pending_scene_path.is_empty():
-		var next_path := _pending_scene_path
-		_pending_scene_path = ""
-		tree.change_scene_to_file(next_path)
-		# Wait a frame for the new scene to load before applying any queued redirect.
-		await tree.process_frame
+		while not _pending_scene_path.is_empty():
+			var next_path := _pending_scene_path
+			_pending_scene_path = ""
+			tree.change_scene_to_file(next_path)
+			# Wait a frame for the new scene to load before applying any queued redirect.
+			await tree.process_frame
 
-	var fade_in := create_tween()
-	fade_in.tween_property(rect, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT)
-	await fade_in.finished
+		var fade_in := create_tween()
+		fade_in.tween_property(rect, "color:a", 0.0, 0.25).set_ease(Tween.EASE_OUT)
+		await fade_in.finished
+
+		if _pending_scene_path.is_empty():
+			break
 
 	layer.queue_free()
 	_transitioning = false

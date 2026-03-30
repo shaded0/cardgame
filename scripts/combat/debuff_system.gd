@@ -29,7 +29,13 @@ func add_debuff(debuff: Debuff) -> void:
 	# Stack same type by refreshing duration instead of adding duplicates.
 	for existing in active_debuffs:
 		if existing.type == debuff.type:
-			existing.remaining = max(existing.remaining, debuff.duration)
+			if debuff.duration <= 0.0:
+				existing.duration = 0.0
+				existing.remaining = 0.0
+			else:
+				if existing.duration > 0.0:
+					existing.duration = max(existing.duration, debuff.duration)
+				existing.remaining = max(existing.remaining, debuff.duration)
 			debuff_applied.emit(debuff)
 			_show_debuff_text(debuff)
 			return

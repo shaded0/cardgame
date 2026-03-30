@@ -22,6 +22,10 @@ var _attack_sequence_id: int = 0
 var _aggro_delay: float = 0.0  ## Seconds before this enemy starts chasing
 var _is_frozen: bool = false   ## Set by FREEZE debuff — stops all movement/attacks
 
+## Separation tuning — prevents enemies from stacking on each other.
+var separation_radius: float = 40.0
+var separation_strength: float = 80.0
+
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite
 @onready var hitbox: Hitbox = $Hitbox
 @onready var hurtbox: Hurtbox = $Hurtbox
@@ -199,9 +203,25 @@ func _play_anim(anim_name: StringName) -> void:
 		if anim_sprite.sprite_frames.has_animation(anim_name):
 			anim_sprite.play(anim_name)
 
+func _compute_separation() -> Vector2:
+	var sep := Vector2.ZERO
+	for enemy in get_tree().get_nodes_in_group("enemies"):
+		if enemy == self or not is_instance_valid(enemy):
+			continue
+		var diff: Vector2 = global_position - enemy.global_position
+		var dist: float = diff.length()
+		if dist < separation_radius and dist > 0.01:
+			sep += diff.normalized() * (separation_radius - dist) / separation_radius
+	return sep
+
 func _chase_player(_delta: float) -> void:
 	var direction: Vector2 = (player.global_position - global_position).normalized()
-	velocity = direction * move_speed
+	var desired: Vector2 = direction * move_speed
+
+	# Repel away from nearby enemies so they spread out instead of stacking.
+	var sep: Vector2 = _compute_separation() * separation_strength
+	velocity = desired + sep
+
 	anim_sprite.rotation = direction.angle() + PI / 2.0
 	move_and_slide()
 

@@ -55,6 +55,7 @@ func physics_update(delta: float) -> void:
 	player.velocity = player.velocity.move_toward(target_velocity, accel * delta)
 	player.update_facing(iso_dir)
 	player.move_and_slide()
+	player.push_colliding_enemies()
 	player.report_motion_step(delta)
 
 func exit() -> void:

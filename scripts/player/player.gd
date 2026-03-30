@@ -237,6 +237,17 @@ static func compute_unstuck_direction(collision_normals: Array[Vector2], move_di
 		return -move_direction.normalized()
 	return Vector2.ZERO
 
+## Push strength applied to enemies the player walks into.
+var enemy_push_strength: float = 120.0
+
+func push_colliding_enemies() -> void:
+	for i in range(get_slide_collision_count()):
+		var collision := get_slide_collision(i)
+		var collider := collision.get_collider()
+		if collider is CharacterBody2D and collider.is_in_group("enemies"):
+			var push_dir: Vector2 = (collider.global_position - global_position).normalized()
+			collider.velocity += push_dir * enemy_push_strength
+
 func play_anim(anim_name: StringName) -> void:
 	if current_anim != anim_name:
 		current_anim = anim_name

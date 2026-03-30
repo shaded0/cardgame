@@ -52,11 +52,11 @@ func get_reward_options(class_id: StringName, count: int = 3, is_elite: bool = f
 	if results.size() < count:
 		var already_picked: Array[String] = []
 		for card in results:
-			already_picked.append(card.card_name)
+			already_picked.append(_canonical_card_name(card.card_name))
 
 		var duplicate_fallback: Array[CardData] = []
 		for card in fallback_cards:
-			if card.card_name in already_picked:
+			if _canonical_card_name(card.card_name) in already_picked:
 				continue
 			duplicate_fallback.append(card)
 
@@ -87,10 +87,17 @@ func _matches_class(card: CardData, class_id: StringName) -> bool:
 			return card.card_class == CardData.CardClass.NEUTRAL
 
 func _deck_contains_card_name(deck: Array[CardData], card_name: String) -> bool:
+	var canonical_name := _canonical_card_name(card_name)
 	for deck_card in deck:
-		if deck_card.card_name == card_name:
+		if _canonical_card_name(deck_card.card_name) == canonical_name:
 			return true
 	return false
+
+func _canonical_card_name(card_name: String) -> String:
+	var canonical := card_name.strip_edges()
+	while canonical.ends_with("+"):
+		canonical = canonical.left(canonical.length() - 1).strip_edges()
+	return canonical
 
 func _weighted_pick(cards: Array[CardData], is_elite: bool) -> CardData:
 	## Rarity weights: normal = 60/30/10, elite = 35/40/25 (C/U/R).

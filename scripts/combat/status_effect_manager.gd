@@ -146,8 +146,17 @@ func _apply_visual(parent: Node) -> void:
 		parent.modulate = _base_modulate * Color(0.7, 0.8, 1.0, 1.0)
 
 func _get_reference_speed(parent: Node) -> float:
+	var speed_bonus: float = _get_external_speed_bonus(parent)
 	if "base_move_speed" in parent:
-		return float(parent.base_move_speed)
+		return float(parent.base_move_speed) + speed_bonus
+	if _base_speed >= 0.0:
+		return _base_speed + speed_bonus
 	if "move_speed" in parent:
 		return float(parent.move_speed)
 	return -1.0
+
+func _get_external_speed_bonus(parent: Node) -> float:
+	var buff_system: Node = parent.get_node_or_null("BuffSystem")
+	if buff_system != null and "bonus_speed" in buff_system:
+		return float(buff_system.bonus_speed)
+	return 0.0

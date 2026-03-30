@@ -224,8 +224,16 @@ func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int) -> void:
 		var outer1 := Vector2(cos(a1) * (base_radius + glow_extent), sin(a1) * (base_radius + glow_extent) * 0.5)
 		var outer2 := Vector2(cos(a2) * (base_radius + glow_extent), sin(a2) * (base_radius + glow_extent) * 0.5)
 		var fade_color := Color(glow_color.r, glow_color.g, glow_color.b, 0.0)
-		_owner.draw_polygon(PackedVector2Array([inner1, inner2, outer2]), PackedColorArray([glow_color, glow_color, fade_color]))
-		_owner.draw_polygon(PackedVector2Array([inner1, outer2, outer1]), PackedColorArray([glow_color, fade_color, fade_color]))
+		_owner.draw_primitive(
+			PackedVector2Array([inner1, inner2, outer2]),
+			PackedColorArray([glow_color, glow_color, fade_color]),
+			PackedVector2Array()
+		)
+		_owner.draw_primitive(
+			PackedVector2Array([inner1, outer2, outer1]),
+			PackedColorArray([glow_color, fade_color, fade_color]),
+			PackedVector2Array()
+		)
 
 func _draw_wall_silhouettes(palette: Dictionary, grid_count: int, floor_theme: int) -> void:
 	var wall_color: Color = palette["void_color"].lightened(0.03)

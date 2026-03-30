@@ -12,6 +12,7 @@ func setup_vignette(palette: Dictionary, vignette_shader: Shader) -> void:
 
 	var rect := ColorRect.new()
 	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.color = Color(1.0, 1.0, 1.0, 0.0)
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var mat := ShaderMaterial.new()
 	mat.shader = vignette_shader
@@ -26,6 +27,7 @@ func setup_low_health_overlay(low_health_shader: Shader) -> ShaderMaterial:
 
 	var rect := ColorRect.new()
 	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.color = Color(1.0, 1.0, 1.0, 0.0)
 	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var material := ShaderMaterial.new()
 	material.shader = low_health_shader
@@ -39,7 +41,8 @@ func connect_low_health_overlay(material: ShaderMaterial, callback: Callable) ->
 	var player: PlayerController = GameManager.get_player()
 	if player and player.has_node("HealthComponent"):
 		var health: HealthComponent = player.get_node("HealthComponent")
-		health.health_changed.connect(callback)
+		if not health.health_changed.is_connected(callback):
+			health.health_changed.connect(callback)
 		callback.call(health.current_health, health.max_health)
 
 func update_low_health_overlay(material: ShaderMaterial, current: float, maximum: float) -> void:

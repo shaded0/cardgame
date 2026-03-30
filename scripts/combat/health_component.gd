@@ -51,6 +51,7 @@ func add_shield(amount: float) -> void:
 
 func set_current_health(value: float) -> void:
 	current_health = clampf(value, 0.0, max_health)
+	shield_health = 0.0
 	_is_dead = current_health <= 0.0
 	_emit_health_changed()
 

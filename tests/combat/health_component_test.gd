@@ -89,3 +89,13 @@ func test_heal_ignores_non_positive_amounts_and_revives_death_latch() -> void:
 
 	assert_eq(health.current_health, 0.0, "Revived health should still clamp back to zero after lethal damage.")
 	assert_eq(died_count, 2, "Healing above zero should clear the dead latch so later lethal damage emits died again.")
+
+func test_set_current_health_clears_temporary_shield() -> void:
+	var player := Factory.make_player(root, false)
+	var health = Factory.add_health(player, 100.0, 60.0)
+	health.add_shield(25.0)
+
+	health.set_current_health(40.0)
+
+	assert_eq(health.current_health, 40.0, "Direct health restores should set the requested HP value.")
+	assert_eq(health.shield_health, 0.0, "Direct health restores should clear temporary shield so it cannot leak across rooms or scripted resets.")

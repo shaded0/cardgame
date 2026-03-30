@@ -11,6 +11,8 @@ var max_resurrections: int = 2
 var _resurrections_used: int = 0
 var _slime_data: EnemyData = null
 var _pending_resurrections: Array[Dictionary] = []  # [{position, timer}]
+var _connected_enemy_ids: Dictionary = {}
+var _node_added_connected: bool = false
 
 func _ready() -> void:
 	_slime_data = preload("res://resources/enemy_data/slime_data.tres")
@@ -54,7 +56,18 @@ func _connect_to_enemy_deaths() -> void:
 		_try_connect_death(other)
 
 	# Also watch for new enemies joining
-	enemy.get_tree().node_added.connect(_on_node_added)
+	var tree := enemy.get_tree()
+	if tree and not _node_added_connected:
+		tree.node_added.connect(_on_node_added)
+		_node_added_connected = true
+
+func _exit_tree() -> void:
+	var tree := get_tree()
+	if tree and _node_added_connected:
+		var node_added_cb := Callable(self, "_on_node_added")
+		if tree.node_added.is_connected(node_added_cb):
+			tree.node_added.disconnect(node_added_cb)
+	_node_added_connected = false
 
 func _on_node_added(node: Node) -> void:
 	if node.is_in_group("enemies") and node != get_parent():
@@ -67,10 +80,15 @@ func _on_node_added(node: Node) -> void:
 func _try_connect_death(other: Node) -> void:
 	if not is_instance_valid(other):
 		return
+	var other_id: int = other.get_instance_id()
+	if _connected_enemy_ids.has(other_id):
+		return
 	var health_comp = other.get_node_or_null("HealthComponent")
 	if health_comp and health_comp is HealthComponent:
-		if not health_comp.died.is_connected(_on_nearby_enemy_died.bind(other)):
-			health_comp.died.connect(_on_nearby_enemy_died.bind(other))
+		var death_cb := Callable(self, "_on_nearby_enemy_died").bind(other)
+		if not health_comp.died.is_connected(death_cb):
+			health_comp.died.connect(death_cb)
+		_connected_enemy_ids[other_id] = true
 
 func _on_nearby_enemy_died(dead_enemy: Node) -> void:
 	if _resurrections_used >= max_resurrections:

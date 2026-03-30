@@ -4,6 +4,9 @@ extends RefCounted
 ## Screen-wide effects: camera shake, hit freeze, flash overlays.
 ## All methods are static for easy access from anywhere.
 
+static var _hit_freeze_depth: int = 0
+static var _hit_freeze_restore_scale: float = 1.0
+
 static func shake(node: Node, intensity: float = 8.0, duration: float = 0.15) -> void:
 	## Shake the camera by temporarily offsetting it. Finds the active Camera2D automatically.
 	if node == null or not is_instance_valid(node):
@@ -37,9 +40,16 @@ static func shake(node: Node, intensity: float = 8.0, duration: float = 0.15) ->
 
 static func hit_freeze(tree: SceneTree, duration: float = 0.05) -> void:
 	## Brief engine pause for impact weight (hit stop).
-	Engine.time_scale = 0.05
+	if tree == null:
+		return
+	if _hit_freeze_depth == 0:
+		_hit_freeze_restore_scale = Engine.time_scale
+		Engine.time_scale = minf(Engine.time_scale, 0.05)
+	_hit_freeze_depth += 1
 	await tree.create_timer(duration, true, false, true).timeout
-	Engine.time_scale = 1.0
+	_hit_freeze_depth = maxi(_hit_freeze_depth - 1, 0)
+	if _hit_freeze_depth == 0:
+		Engine.time_scale = _hit_freeze_restore_scale
 
 static func spawn_hit_sparks(parent: Node, pos: Vector2, count: int = 6, color: Color = Color(1.0, 0.8, 0.3)) -> void:
 	## Burst of small directional sparks on hit.

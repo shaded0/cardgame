@@ -41,3 +41,28 @@ func test_spend_mana_rejects_expensive_actions() -> void:
 	assert_false(spent, "Spending more mana than available should fail.")
 	assert_eq(mana.current_mana, 10.0, "Failed spends should leave current mana untouched.")
 	assert_eq(update_count, 0, "Failed spends should not emit mana_changed.")
+
+func test_add_mana_ignores_noop_and_negative_values() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 25.0, 25.0)
+
+	var update_count := 0
+	mana.mana_changed.connect(func(_current: float, _maximum: float) -> void:
+		update_count += 1
+	)
+
+	mana.add_mana(0.0)
+	mana.add_mana(-5.0)
+	mana.add_mana(3.0)
+
+	assert_eq(mana.current_mana, 25.0, "No-op or over-cap mana gains should leave mana unchanged.")
+	assert_eq(update_count, 0, "No-op or capped mana gains should not emit mana_changed.")
+
+func test_initialize_clamps_starting_mana_percent() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 30.0, 0.0)
+	mana.starting_mana_percent = 1.5
+
+	mana.initialize()
+
+	assert_eq(mana.current_mana, 30.0, "Initializing mana should clamp overly large starting percentages to max mana.")

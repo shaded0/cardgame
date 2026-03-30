@@ -53,7 +53,7 @@ func _spawn_afterimages() -> void:
 
 	for i in range(3):
 		# Stagger ghost spawns across the dodge
-		var delay := float(i) * player.dodge_duration * 0.25
+		var delay: float = float(i) * player.dodge_duration * 0.25
 
 		var tree: SceneTree = player.get_tree()
 		if tree == null:

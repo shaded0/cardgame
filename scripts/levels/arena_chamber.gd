@@ -1,4 +1,4 @@
-extends ArenaBase
+extends "res://scripts/levels/arena_base.gd"
 
 ## Open chamber with scattered pillars for cover.
 ## Three layout variants selected randomly for replay variety.

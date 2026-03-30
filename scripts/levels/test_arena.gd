@@ -1,4 +1,4 @@
-extends ArenaBase
+extends "res://scripts/levels/arena_base.gd"
 
 ## Test arena setup script.
 ## Draws a debug isometric-style floor and handles simple timed enemy spawning bounds.

@@ -21,21 +21,27 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Passive mana regen so players aren't starved between melee exchanges.
 	if passive_regen_rate > 0.0 and current_mana < max_mana:
-		add_mana(passive_regen_rate * delta)
+		add_mana(passive_regen_rate * delta, false)
 
 func initialize() -> void:
 	## Call at fight start to front-load mana.
-	current_mana = max_mana * starting_mana_percent
+	current_mana = clampf(max_mana * starting_mana_percent, 0.0, max_mana)
 	mana_changed.emit(current_mana, max_mana)
 
-func add_mana(amount: float) -> void:
+func add_mana(amount: float, show_fx: bool = true) -> void:
+	if amount <= 0.0:
+		return
+
 	# Clamp mana to max and emit once so UI updates reliably.
 	var old_mana: float = current_mana
-	current_mana = min(current_mana + amount, max_mana)
+	var new_mana: float = min(current_mana + amount, max_mana)
+	if is_equal_approx(new_mana, old_mana):
+		return
+	current_mana = new_mana
 	mana_changed.emit(current_mana, max_mana)
 
 	# Show mana gain visual if we actually gained mana
-	if current_mana > old_mana and amount > 0:
+	if show_fx and current_mana > old_mana:
 		var owner_node: Node2D = get_parent() as Node2D
 		if owner_node and owner_node.is_in_group("player"):
 			SpellEffectVisual.spawn_mana_gain(owner_node.get_parent(), owner_node.global_position)

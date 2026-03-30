@@ -217,7 +217,6 @@ func _resolve_shield(effect: CardEffect, is_x_cost: bool = false) -> void:
 func _resolve_mana_gen(effect: CardEffect) -> void:
 	var mana: ManaComponent = player.get_node("ManaComponent")
 	mana.add_mana(effect.value)
-	SpellEffectVisual.spawn_mana_gain(player.get_parent(), player.global_position)
 
 func _find_target(target_mode: CardEffect.TargetMode) -> Node2D:
 	match target_mode:

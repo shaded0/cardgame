@@ -27,8 +27,20 @@ func _ready() -> void:
 	_style_buttons()
 
 	# React to global pause events emitted by GameManager.
-	GameManager.game_paused.connect(_on_game_paused)
-	GameManager.game_resumed.connect(_on_game_resumed)
+	var paused_cb := Callable(self, "_on_game_paused")
+	if not GameManager.game_paused.is_connected(paused_cb):
+		GameManager.game_paused.connect(paused_cb)
+	var resumed_cb := Callable(self, "_on_game_resumed")
+	if not GameManager.game_resumed.is_connected(resumed_cb):
+		GameManager.game_resumed.connect(resumed_cb)
+
+func _exit_tree() -> void:
+	var paused_cb := Callable(self, "_on_game_paused")
+	if GameManager.game_paused.is_connected(paused_cb):
+		GameManager.game_paused.disconnect(paused_cb)
+	var resumed_cb := Callable(self, "_on_game_resumed")
+	if GameManager.game_resumed.is_connected(resumed_cb):
+		GameManager.game_resumed.disconnect(resumed_cb)
 
 func _on_game_paused() -> void:
 	if _close_tween and _close_tween.is_valid():
@@ -51,6 +63,8 @@ func _on_game_paused() -> void:
 
 func _on_game_resumed() -> void:
 	# Animate close: shrink and fade out
+	if _close_tween and _close_tween.is_valid():
+		_close_tween.kill()
 	_close_tween = create_tween().set_parallel(true)
 	_close_tween.tween_property(overlay, "modulate:a", 0.0, 0.15)
 	_close_tween.tween_property(panel, "scale", Vector2(0.9, 0.9), 0.15).set_ease(Tween.EASE_IN)

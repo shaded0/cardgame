@@ -15,14 +15,21 @@ func _ready() -> void:
 		GameManager.start_new_run()
 
 	_build_map()
-	GameManager.room_completed.connect(_on_room_completed)
+	var room_completed_cb := Callable(self, "_on_room_completed")
+	if not GameManager.room_completed.is_connected(room_completed_cb):
+		GameManager.room_completed.connect(room_completed_cb)
+
+func _exit_tree() -> void:
+	var room_completed_cb := Callable(self, "_on_room_completed")
+	if GameManager.room_completed.is_connected(room_completed_cb):
+		GameManager.room_completed.disconnect(room_completed_cb)
 
 func _build_map() -> void:
 	_clear_room_button_pulses()
 
 	# Clear existing
 	for child in get_children():
-		if child.name != "Background" and child.name != "Title" and child.name != "MapLines":
+		if child.name != "Background" and child.name != "Title":
 			child.queue_free()
 	room_buttons.clear()
 

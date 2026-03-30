@@ -1,4 +1,4 @@
-extends ArenaBase
+extends "res://scripts/levels/arena_base.gd"
 
 ## Large boss arena with corner pillars. Forces golem boss spawn.
 ## The Molten Throne — most dramatic visual treatment.

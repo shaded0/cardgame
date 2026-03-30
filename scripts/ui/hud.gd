@@ -41,11 +41,21 @@ func _connect_to_player() -> void:
 
 	# Connect to card manager signal: hand changes redraw slots immediately.
 	var card_mgr: CardManager = player.get_node("CardManager")
-	card_mgr.hand_updated.connect(Callable(self, "_on_hand_updated"))
-	card_mgr.draw_pile_changed.connect(Callable(self, "_on_draw_pile_changed"))
-	card_mgr.deck_reshuffled.connect(Callable(self, "_on_deck_reshuffled"))
-	card_mgr.card_cycled.connect(Callable(self, "_on_card_cycled"))
-	card_mgr.card_played.connect(Callable(self, "_on_card_played_synergy"))
+	var hand_updated_cb := Callable(self, "_on_hand_updated")
+	if not card_mgr.hand_updated.is_connected(hand_updated_cb):
+		card_mgr.hand_updated.connect(hand_updated_cb)
+	var draw_pile_cb := Callable(self, "_on_draw_pile_changed")
+	if not card_mgr.draw_pile_changed.is_connected(draw_pile_cb):
+		card_mgr.draw_pile_changed.connect(draw_pile_cb)
+	var reshuffle_cb := Callable(self, "_on_deck_reshuffled")
+	if not card_mgr.deck_reshuffled.is_connected(reshuffle_cb):
+		card_mgr.deck_reshuffled.connect(reshuffle_cb)
+	var cycled_cb := Callable(self, "_on_card_cycled")
+	if not card_mgr.card_cycled.is_connected(cycled_cb):
+		card_mgr.card_cycled.connect(cycled_cb)
+	var played_cb := Callable(self, "_on_card_played_synergy")
+	if not card_mgr.card_played.is_connected(played_cb):
+		card_mgr.card_played.connect(played_cb)
 
 	# Initialize references to each slot and show matching hotkey hints (1-4).
 	card_slots = card_hand.get_children()

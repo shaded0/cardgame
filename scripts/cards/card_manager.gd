@@ -222,8 +222,9 @@ func get_deck_status() -> Dictionary:
 func _draw_next_card(exclude_hand_on_reshuffle: bool = true) -> CardData:
 	if draw_pile.is_empty():
 		draw_pile = _build_reshuffle_pile(exclude_hand_on_reshuffle)
-		draw_pile.shuffle()
-		deck_reshuffled.emit()
+		if not draw_pile.is_empty():
+			draw_pile.shuffle()
+			deck_reshuffled.emit()
 
 	if draw_pile.is_empty():
 		draw_pile_changed.emit(0)

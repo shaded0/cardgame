@@ -37,7 +37,13 @@ void fragment() {
     float center_glow = 1.0 - abs(UV.y - 0.5) * 2.0;
     center_glow = pow(center_glow, 2.0) * 0.3;
 
-    vec3 final_color = grad + shimmer + center_glow;
+    // Top-edge highlight for 3D bevel look
+    float top_highlight = smoothstep(0.15, 0.0, UV.y) * 0.35;
+
+    // Bottom-edge shadow for depth
+    float bottom_shadow = smoothstep(0.85, 1.0, UV.y) * 0.25;
+
+    vec3 final_color = grad + shimmer + center_glow + top_highlight - bottom_shadow;
 
     // Only apply where the original texture has color (the fill)
     COLOR = vec4(final_color, tex.a);

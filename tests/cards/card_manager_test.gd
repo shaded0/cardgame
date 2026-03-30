@@ -183,3 +183,23 @@ func test_reshuffle_preserves_duplicate_copies_not_currently_in_hand() -> void:
 
 	assert_eq(reshuffle.size(), 1, "Reshuffle should exclude only the exact number of cards currently held, not every duplicate copy of the same card resource.")
 	assert_eq(reshuffle[0], strike, "Duplicate copies that are not in hand should remain eligible for reshuffle draws.")
+
+func test_empty_reshuffle_does_not_emit_deck_reshuffled() -> void:
+	var player := Factory.make_player(root)
+	Factory.add_mana(player, 100.0, 10.0)
+	var card_manager: CardManager = Factory.add_card_manager(player)
+	var strike = Factory.make_card("Strike", 0)
+	var defend = Factory.make_card("Defend", 0)
+	card_manager.deck = [strike, defend]
+	card_manager.draw_pile = []
+	card_manager.hand = [strike, defend]
+
+	var reshuffle_count := 0
+	card_manager.deck_reshuffled.connect(func() -> void:
+		reshuffle_count += 1
+	)
+
+	var drawn := card_manager._draw_next_card()
+
+	assert_eq(drawn, null, "Drawing from an empty deck with no eligible reshuffle cards should safely return null.")
+	assert_eq(reshuffle_count, 0, "CardManager should not emit deck_reshuffled when no actual reshuffle occurred.")

@@ -82,7 +82,7 @@ func apply_effect(effect: StatusEffect) -> void:
 	else:
 		var existing := _find_effect(effect.type)
 		if existing:
-			existing.remaining = effect.duration
+			existing.remaining = maxf(existing.remaining, effect.duration)
 			existing.damage_per_tick = maxf(existing.damage_per_tick, effect.damage_per_tick)
 			existing.slow_percent = maxf(existing.slow_percent, effect.slow_percent)
 			_apply_speed_modifiers(parent)

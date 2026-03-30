@@ -50,3 +50,40 @@ func test_freeze_expiry_restores_current_buffed_speed() -> void:
 	status_manager._process(0.2)
 
 	assert_near(host.move_speed, 130.0, 0.001, "When freeze expires, movement speed should restore to the active buffed value instead of dropping to the base stat.")
+
+func test_reapplying_slower_weaker_slow_does_not_shorten_or_nerf_existing_slow() -> void:
+	var host := SpeedHost.new()
+	host.name = "SpeedHost"
+	var status_manager: StatusEffectManager = StatusEffectManagerScript.new()
+	status_manager.name = "StatusEffectManager"
+	host.add_child(status_manager)
+	root.add_child(host)
+
+	status_manager.apply_effect(StatusEffect.slow(0.6, 2.0))
+	status_manager._process(0.5)
+	status_manager.apply_effect(StatusEffect.slow(0.2, 0.5))
+
+	assert_near(host.move_speed, 40.0, 0.001, "Reapplying a weaker slow should not reduce the active slow strength.")
+	assert_true(status_manager.has_effect(StatusEffect.Type.SLOW), "Weaker reapplications should not shorten a longer active slow into early expiry.")
+
+	status_manager._process(1.0)
+
+	assert_true(status_manager.has_effect(StatusEffect.Type.SLOW), "A shorter reapplication should not cut down the original slow duration.")
+
+func test_reapplying_weaker_burn_does_not_shorten_existing_burn() -> void:
+	var host := SpeedHost.new()
+	host.name = "BurnHost"
+	var health := HealthComponent.new()
+	health.name = "HealthComponent"
+	host.add_child(health)
+	var status_manager: StatusEffectManager = StatusEffectManagerScript.new()
+	status_manager.name = "StatusEffectManager"
+	host.add_child(status_manager)
+	root.add_child(host)
+
+	status_manager.apply_effect(StatusEffect.burn(5.0, 2.0))
+	status_manager._process(0.5)
+	status_manager.apply_effect(StatusEffect.burn(1.0, 0.5))
+	status_manager._process(1.0)
+
+	assert_true(status_manager.has_effect(StatusEffect.Type.BURN), "Reapplying a weaker burn should not shorten the stronger existing burn duration.")

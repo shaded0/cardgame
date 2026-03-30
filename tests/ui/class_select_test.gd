@@ -40,3 +40,13 @@ func test_class_select_unpauses_through_game_manager_resume_signal() -> void:
 
 	assert_false(tree.paused, "Class select should unpause the tree if the previous scene left the game paused.")
 	assert_eq(resumed_count, 1, "Class select should resume through GameManager so pause listeners receive the same cleanup signal as other resume flows.")
+
+func test_class_select_rebuilds_missing_ui_nodes_from_minimal_scene() -> void:
+	var class_select: Control = ClassSelectScene.instantiate()
+	root.add_child(class_select)
+
+	assert_not_null(class_select.get_node_or_null("VBoxContainer"), "Class select should recreate its root VBoxContainer if the scene file is missing the authored UI subtree.")
+	assert_not_null(class_select.get_node_or_null("VBoxContainer/SoldierButton"), "Class select should rebuild the Soldier button when the scene is incomplete.")
+	assert_not_null(class_select.get_node_or_null("VBoxContainer/RogueButton"), "Class select should rebuild the Rogue button when the scene is incomplete.")
+	assert_not_null(class_select.get_node_or_null("VBoxContainer/MageButton"), "Class select should rebuild the Mage button when the scene is incomplete.")
+	assert_not_null(class_select.get_node_or_null("VBoxContainer/Description"), "Class select should rebuild the shared description label when the scene is incomplete.")

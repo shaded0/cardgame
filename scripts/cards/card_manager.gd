@@ -237,11 +237,20 @@ func _build_reshuffle_pile(exclude_hand_cards: bool) -> Array[CardData]:
 	if not exclude_hand_cards:
 		return deck.duplicate()
 
+	var hand_counts: Dictionary = {}
+	for held_card in hand:
+		if held_card == null:
+			continue
+		var held_count: int = int(hand_counts.get(held_card, 0))
+		hand_counts[held_card] = held_count + 1
+
 	var reshuffle: Array[CardData] = []
 	for card in deck:
 		if card == null:
 			continue
-		if card in hand:
+		var remaining_in_hand: int = int(hand_counts.get(card, 0))
+		if remaining_in_hand > 0:
+			hand_counts[card] = remaining_in_hand - 1
 			continue
 		reshuffle.append(card)
 	return reshuffle

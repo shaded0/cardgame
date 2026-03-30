@@ -42,12 +42,14 @@ func test_room_availability_respects_tiers_connections_and_completed_rooms() -> 
 
 func test_start_new_run_resets_state_and_loads_room_resources() -> void:
 	var manager = Factory.make_game_manager(root)
+	manager.current_room = Factory.make_room("boss", 2, [], RoomData.RoomType.BOSS)
 	manager.completed_rooms = ["old_room"]
 	manager.player_health_carry = 12.0
 
 	manager.start_new_run()
 
 	assert_true(manager.run_active, "Starting a run should mark the run as active.")
+	assert_eq(manager.current_room, null, "Starting a run should clear the previous room so the new run cannot inherit stale room context.")
 	assert_eq(manager.completed_rooms.size(), 0, "Starting a run should clear completed room history.")
 	assert_eq(manager.player_health_carry, -1.0, "Starting a run should reset carry health.")
 	assert_eq(manager.all_rooms.size(), 7, "Starting a run should load the configured room resources.")

@@ -219,6 +219,241 @@ func _make_chain_texture() -> ImageTexture:
 					img.set_pixel(x, y, Color(shade, shade, shade * 0.95, 0.8))
 	return ImageTexture.create_from_image(img)
 
+func _build_torch_wall() -> void:
+	# Iron bracket mount
+	var bracket := Sprite2D.new()
+	bracket.texture = _make_torch_bracket_texture()
+	bracket.offset = Vector2(0, -10)
+	bracket.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(bracket)
+
+	# Flame — reuse existing flame texture, slightly smaller
+	var flame := Sprite2D.new()
+	flame.texture = _make_flame_texture()
+	flame.offset = Vector2(0, -26)
+	flame.scale = Vector2(0.8, 0.8)
+	flame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(flame)
+	_animate_flame(flame)
+
+	# Glow — smaller than brazier
+	var glow := Sprite2D.new()
+	glow.texture = _make_glow_texture(40)
+	glow.offset = Vector2(0, -20)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = mat
+	glow.modulate = Color(_accent_color.r, _accent_color.g, _accent_color.b, 0.12)
+	glow.z_index = -1
+	add_child(glow)
+	_animate_glow(glow)
+
+func _build_banner() -> void:
+	var sprite := Sprite2D.new()
+	sprite.texture = _make_banner_texture()
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = 0
+	add_child(sprite)
+	# Gentle sway animation
+	var tween := sprite.create_tween().set_loops()
+	var period: float = randf_range(3.0, 4.5)
+	tween.tween_property(sprite, "rotation", 0.05, period * 0.5).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(sprite, "rotation", -0.05, period * 0.5).set_ease(Tween.EASE_IN_OUT).set_trans(Tween.TRANS_SINE)
+
+func _build_altar() -> void:
+	var base_sprite := Sprite2D.new()
+	base_sprite.texture = _make_altar_texture()
+	base_sprite.offset = Vector2(0, -10)
+	base_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(base_sprite)
+
+	# Accent glow on top
+	var glow := Sprite2D.new()
+	glow.texture = _make_glow_texture(32)
+	glow.offset = Vector2(0, -18)
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = mat
+	glow.modulate = Color(_accent_color.r, _accent_color.g, _accent_color.b, 0.08)
+	glow.z_index = -1
+	add_child(glow)
+	_animate_glow(glow)
+
+func _build_blood_stain() -> void:
+	var sprite := Sprite2D.new()
+	sprite.texture = _make_blood_stain_texture()
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = -2
+	sprite.rotation = randf() * TAU
+	sprite.modulate.a = randf_range(0.3, 0.5)
+	add_child(sprite)
+
+func _build_skull_pile() -> void:
+	var sprite := Sprite2D.new()
+	sprite.texture = _make_skull_pile_texture()
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.modulate.a = 0.65
+	sprite.rotation = randf() * TAU
+	add_child(sprite)
+
+func _make_torch_bracket_texture() -> ImageTexture:
+	var w: int = 8
+	var h: int = 16
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var iron := Color(0.3, 0.28, 0.25, 1.0)
+	var iron_light := Color(0.38, 0.35, 0.32, 1.0)
+	# Vertical bar
+	for y in range(4, h):
+		img.set_pixel(3, y, iron)
+		img.set_pixel(4, y, iron_light)
+	# Horizontal shelf at top
+	for x in range(1, 7):
+		img.set_pixel(x, 4, iron_light)
+		img.set_pixel(x, 5, iron)
+	# Small cup/holder at top
+	for x in range(2, 6):
+		img.set_pixel(x, 3, iron)
+	return ImageTexture.create_from_image(img)
+
+func _make_banner_texture() -> ImageTexture:
+	var w: int = 12
+	var h: int = 24
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var rod_color := Color(0.3, 0.2, 0.1, 1.0)
+	var fabric := _accent_color.darkened(0.2)
+	var border := _accent_color.darkened(0.4)
+	var emblem := _accent_color.lightened(0.15)
+
+	# Top rod
+	for x in range(w):
+		img.set_pixel(x, 0, rod_color)
+		img.set_pixel(x, 1, rod_color)
+
+	# Banner body
+	for x in range(w):
+		for y in range(2, h - 2):
+			if x < 1 or x >= w - 1:
+				img.set_pixel(x, y, border)
+			elif y < 3 or y >= h - 3:
+				img.set_pixel(x, y, border)
+			else:
+				img.set_pixel(x, y, fabric)
+
+	# Center diamond emblem
+	var cx: int = w / 2
+	var cy: int = h / 2
+	for x in range(w):
+		for y in range(2, h - 2):
+			var dx: int = absi(x - cx)
+			var dy: int = absi(y - cy)
+			if dx + dy <= 3:
+				img.set_pixel(x, y, emblem)
+
+	# Pennant bottom — pointed/ragged edge
+	for x in range(1, w - 1):
+		var dist_from_center: int = absi(x - cx)
+		var depth: int = h - 2 - dist_from_center
+		if depth < h - 2:
+			for y in range(h - 2, mini(depth + 1, h)):
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+		# Keep center columns extending further
+		if dist_from_center <= 1:
+			for y in range(h - 2, h):
+				img.set_pixel(x, y, fabric)
+
+	return ImageTexture.create_from_image(img)
+
+func _make_altar_texture() -> ImageTexture:
+	var w: int = 20
+	var h: int = 16
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+
+	for y in range(h):
+		# Trapezoidal shape: wider at bottom, narrower at top
+		var t: float = float(y) / float(h)
+		var half_width: float = lerpf(6.0, 9.0, t)
+		var cx: float = w / 2.0
+
+		for x in range(w):
+			var dist: float = absf(float(x) - cx)
+			if dist > half_width:
+				continue
+
+			var shade: float
+			if y < 4:
+				# Top platform — lighter
+				shade = 0.5 - dist * 0.01
+			elif y == 4 or y == 10:
+				# Step ledges
+				shade = 0.45
+			else:
+				shade = 0.4 - dist * 0.01
+
+			# Edge darkening
+			if dist > half_width - 1.5:
+				shade *= 0.75
+
+			var variation: float = fmod(absf(sin(float(x * 7 + y * 13))), 1.0) * 0.03
+			img.set_pixel(x, y, Color(shade + variation, (shade + variation) * 0.95, (shade + variation) * 0.9, 1.0))
+
+	return ImageTexture.create_from_image(img)
+
+func _make_blood_stain_texture() -> ImageTexture:
+	var w: int = 18
+	var h: int = 12
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var cx: float = w / 2.0
+	var cy: float = h / 2.0
+	var max_radius: float = minf(cx, cy) - 1.0
+	var hash_seed: float = randf() * TAU
+
+	for x in range(w):
+		for y in range(h):
+			var dx: float = float(x) - cx
+			var dy: float = float(y) - cy
+			var dist: float = sqrt(dx * dx + dy * dy)
+			var angle: float = atan2(dy, dx)
+			# Organic irregular edge
+			var edge_radius: float = max_radius * (0.6 + 0.4 * absf(sin(angle * 3.0 + hash_seed)))
+			if dist < edge_radius:
+				var t: float = dist / edge_radius
+				var alpha: float = (1.0 - t * t) * 0.8
+				img.set_pixel(x, y, Color(0.35, 0.08, 0.05, alpha))
+
+	return ImageTexture.create_from_image(img)
+
+func _make_skull_pile_texture() -> ImageTexture:
+	var w: int = 16
+	var h: int = 12
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var bone_color := Color(0.7, 0.68, 0.6, 0.8)
+	var eye_color := Color(0.15, 0.1, 0.1, 0.9)
+
+	# Draw 3 overlapping skull circles
+	var skull_positions := [Vector2(5, 6), Vector2(10, 5), Vector2(7, 9)]
+	var skull_radii := [3.5, 3.0, 3.2]
+
+	for idx in range(skull_positions.size()):
+		var sc: Vector2 = skull_positions[idx]
+		var sr: float = skull_radii[idx]
+		for x in range(w):
+			for y in range(h):
+				var dist: float = Vector2(x, y).distance_to(sc)
+				if dist < sr:
+					var shade: float = 1.0 - dist / sr * 0.3
+					img.set_pixel(x, y, Color(bone_color.r * shade, bone_color.g * shade, bone_color.b * shade, bone_color.a))
+
+		# Eye sockets — two small dark dots
+		var eye_y: int = int(sc.y) - 1
+		var left_eye_x: int = int(sc.x) - 1
+		var right_eye_x: int = int(sc.x) + 1
+		if left_eye_x >= 0 and left_eye_x < w and eye_y >= 0 and eye_y < h:
+			img.set_pixel(left_eye_x, eye_y, eye_color)
+		if right_eye_x >= 0 and right_eye_x < w and eye_y >= 0 and eye_y < h:
+			img.set_pixel(right_eye_x, eye_y, eye_color)
+
+	return ImageTexture.create_from_image(img)
+
 ## Inner class for lava pool drawing.
 class _LavaPoolDraw extends Node2D:
 	var accent: Color = Color(1.0, 0.5, 0.1)

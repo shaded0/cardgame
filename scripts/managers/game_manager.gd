@@ -48,6 +48,7 @@ func go_to_class_select() -> void:
 
 func start_new_run() -> void:
 	run_active = true
+	current_room = null
 	completed_rooms.clear()
 	player_health_carry = -1.0
 	run_deck = current_class_config.card_pool.duplicate() if current_class_config else []

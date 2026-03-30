@@ -124,15 +124,83 @@ func _spawn_random_decorations(count: int = 6) -> void:
 		var pos := Vector2(cos(angle) * dist, sin(angle) * 0.5 * dist)
 		var type: ArenaDecoration.DecorType
 		var roll: float = randf()
-		if roll < 0.4:
+		if roll < 0.25:
 			type = ArenaDecoration.DecorType.RUBBLE
-		elif roll < 0.7:
+		elif roll < 0.45:
 			type = ArenaDecoration.DecorType.BONES
-		elif roll < 0.9:
+		elif roll < 0.55:
 			type = ArenaDecoration.DecorType.CHAIN
+		elif roll < 0.65:
+			type = ArenaDecoration.DecorType.BLOOD_STAIN
+		elif roll < 0.75:
+			type = ArenaDecoration.DecorType.SKULL_PILE
 		else:
 			type = ArenaDecoration.DecorType.BRAZIER
 		_add_decoration(type, pos)
+
+func _clamp_to_diamond(pos: Vector2, radius: float) -> Vector2:
+	## Clamp a position to the arena's diamond boundary.
+	var ix: float = absf(pos.x)
+	var iy: float = absf(pos.y) * 2.0
+	if ix + iy > radius:
+		var scale_factor: float = radius / (ix + iy)
+		return pos * scale_factor
+	return pos
+
+func _spawn_perimeter_decorations(torch_count: int = 8, banner_count: int = 4) -> void:
+	## Place torches and banners evenly around the arena perimeter.
+	var edge_radius: float = arena_radius * 0.85
+	for i in range(torch_count):
+		var angle: float = float(i) / float(torch_count) * TAU
+		var raw_pos := Vector2(cos(angle) * edge_radius, sin(angle) * 0.5 * edge_radius)
+		var pos := _clamp_to_diamond(raw_pos, edge_radius)
+		_add_decoration(ArenaDecoration.DecorType.TORCH_WALL, pos)
+		# 30% chance of clutter at torch base
+		if randf() < 0.3:
+			var clutter_offset := Vector2(randf_range(-20, 20), randf_range(-10, 10))
+			var clutter_pos := _clamp_to_diamond(pos * 0.92 + clutter_offset, edge_radius * 0.9)
+			var clutter_type: ArenaDecoration.DecorType
+			if randf() < 0.5:
+				clutter_type = ArenaDecoration.DecorType.RUBBLE
+			else:
+				clutter_type = ArenaDecoration.DecorType.BONES
+			_add_decoration(clutter_type, clutter_pos)
+
+	for i in range(banner_count):
+		var angle: float = (float(i) + 0.5) / float(banner_count) * TAU
+		var raw_pos := Vector2(cos(angle) * edge_radius * 0.9, sin(angle) * 0.5 * edge_radius * 0.9)
+		var pos := _clamp_to_diamond(raw_pos, edge_radius * 0.9)
+		_add_decoration(ArenaDecoration.DecorType.BANNER, pos)
+
+func _spawn_alcove_cluster(center: Vector2) -> void:
+	## Create a small decoration cluster to imply an architectural nook.
+	if randf() < 0.5:
+		_add_decoration(ArenaDecoration.DecorType.TORCH_WALL, center)
+	else:
+		_add_decoration(ArenaDecoration.DecorType.BRAZIER, center)
+
+	var scatter_types := [
+		ArenaDecoration.DecorType.RUBBLE,
+		ArenaDecoration.DecorType.BONES,
+		ArenaDecoration.DecorType.SKULL_PILE,
+		ArenaDecoration.DecorType.BLOOD_STAIN,
+	]
+	var scatter_count: int = randi_range(2, 3)
+	for _idx in range(scatter_count):
+		var offset := Vector2(randf_range(-40, 40), randf_range(-20, 20))
+		_add_decoration(scatter_types.pick_random(), center + offset)
+
+func _spawn_edge_pillars(count: int = 6) -> void:
+	## Place pillar obstacles around the arena perimeter.
+	var pillar_radius: float = arena_radius * 0.82
+	for i in range(count):
+		var angle: float = float(i) / float(count) * TAU
+		# Skip bottom zone (player entry area) — angles near PI/2
+		if absf(angle - PI * 0.5) < 0.5:
+			continue
+		var raw_pos := Vector2(cos(angle) * pillar_radius, sin(angle) * 0.5 * pillar_radius)
+		var pos := _clamp_to_diamond(raw_pos, pillar_radius)
+		_add_obstacle(Obstacle.ObstacleType.PILLAR, pos)
 
 func _configure_from_current_room() -> void:
 	enemies_to_spawn = _flow.configure_from_current_room(enemies_to_spawn)

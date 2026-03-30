@@ -1,6 +1,7 @@
 extends "res://tests/support/test_case.gd"
 
 const Factory = preload("res://tests/support/test_factory.gd")
+const StatusEffectManagerScript = preload("res://scripts/combat/status_effect_manager.gd")
 
 func test_defense_buff_caps_damage_reduction_at_eighty_percent() -> void:
 	var player := Factory.make_player(root, false)
@@ -62,3 +63,20 @@ func test_timed_empower_expiry_clears_remaining_stacks_and_bonus() -> void:
 	assert_eq(buff_system.empowered_attacks, 0, "Expired timed empower buffs should not leave attack stacks behind.")
 	assert_eq(buff_system.empower_bonus, 0.0, "Expired timed empower buffs should clear their bonus damage.")
 	assert_false(buff_system.has_buff_type(Buff.Type.EMPOWER_NEXT), "Expired timed empower buffs should no longer be reported as active.")
+
+func test_speed_buff_recomputes_immediately_through_active_slow_context() -> void:
+	var player := Factory.make_player(root, false)
+	player.move_speed = 100.0
+	var status_manager: StatusEffectManager = StatusEffectManagerScript.new()
+	status_manager.name = "StatusEffectManager"
+	player.add_child(status_manager)
+	var buff_system = Factory.add_buff_system(player)
+
+	status_manager.apply_effect(StatusEffect.slow(0.4, 2.0))
+	buff_system.add_buff(Buff.create(Buff.Type.SPEED_UP, 50.0, 2.0))
+
+	assert_near(player.move_speed, 90.0, 0.001, "Adding a speed buff while slowed should immediately recompute the composed speed instead of briefly using an uncomposed raw move_speed.")
+
+	buff_system.remove_buff(buff_system.active_buffs[0])
+
+	assert_near(player.move_speed, 60.0, 0.001, "Removing that speed buff should also recompute through the active slow context instead of restoring the unslowed base speed.")

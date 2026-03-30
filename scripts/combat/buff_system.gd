@@ -17,11 +17,14 @@ var damage_reduction: float = 0.0  # 0.0 to 1.0 (percentage)
 var _damage_reduction_total: float = 0.0
 var empowered_attacks: int = 0  # Next N attacks deal bonus damage
 var empower_bonus: float = 0.0
+var _fallback_base_move_speed: float = -1.0
 
 func _ready() -> void:
 	# Inherit means this node follows parent pause/process behavior by default.
 	process_mode = Node.PROCESS_MODE_INHERIT
 	player = get_parent() as CharacterBody2D
+	if player and "move_speed" in player:
+		_fallback_base_move_speed = float(player.move_speed)
 
 func _process(delta: float) -> void:
 	# Tick down timed buffs each frame and collect those with expired durations.
@@ -59,8 +62,7 @@ func _apply_buff_stats(buff: Buff) -> void:
 			bonus_damage += buff.value
 		Buff.Type.SPEED_UP:
 			bonus_speed += buff.value
-			if player:
-				player.move_speed += buff.value
+			_refresh_player_move_speed()
 		Buff.Type.DEFENSE_UP:
 			_damage_reduction_total += buff.value / 100.0
 			damage_reduction = min(_damage_reduction_total, 0.8)
@@ -78,8 +80,7 @@ func _remove_buff_stats(buff: Buff) -> void:
 			bonus_damage -= buff.value
 		Buff.Type.SPEED_UP:
 			bonus_speed -= buff.value
-			if player:
-				player.move_speed -= buff.value
+			_refresh_player_move_speed()
 		Buff.Type.DEFENSE_UP:
 			_damage_reduction_total = max(0.0, _damage_reduction_total - buff.value / 100.0)
 			damage_reduction = min(_damage_reduction_total, 0.8)
@@ -148,3 +149,23 @@ func _show_buff_visual(buff: Buff) -> void:
 		Buff.Type.DODGE_BOOST: color = Color(0.8, 0.3, 1.0, 0.5)
 		_: color = Color(1.0, 1.0, 1.0, 0.4)
 	SpellEffectVisual.spawn_burst(player.get_parent(), player.global_position, 14.0, color, 0.4)
+
+func _refresh_player_move_speed() -> void:
+	if player == null or not is_instance_valid(player) or not "move_speed" in player:
+		return
+
+	var move_speed: float = _get_base_move_speed() + bonus_speed
+	var status_manager: Node = player.get_node_or_null("StatusEffectManager")
+	if status_manager != null:
+		if status_manager.has_method("is_frozen") and status_manager.call("is_frozen"):
+			player.move_speed = 0.0
+			return
+		if status_manager.has_method("get_slow_multiplier"):
+			move_speed *= float(status_manager.call("get_slow_multiplier"))
+
+	player.move_speed = move_speed
+
+func _get_base_move_speed() -> float:
+	if player != null and "base_move_speed" in player:
+		return float(player.base_move_speed)
+	return _fallback_base_move_speed

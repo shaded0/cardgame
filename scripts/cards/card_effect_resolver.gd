@@ -154,7 +154,9 @@ func _resolve_buff(effect: CardEffect) -> void:
 		_:
 			buff_type = Buff.Type.DAMAGE_UP
 
-	var duration: float = effect.duration if effect.duration > 0.0 else 5.0
+	var duration: float = effect.duration
+	if duration <= 0.0 and buff_type != Buff.Type.EMPOWER_NEXT:
+		duration = 5.0
 	var buff: Buff = Buff.create(buff_type, effect.value, duration, max(effect.stacks, 1))
 	buff_sys.add_buff(buff)
 
@@ -183,9 +185,9 @@ func _resolve_debuff(effect: CardEffect) -> void:
 			# If radius is set, only affect enemies in range. Otherwise affect all.
 			if effect.radius > 0.0 and enemy.global_position.distance_to(center) > effect.radius:
 				continue
-			var debuff_sys: Node = enemy.get_node_or_null("DebuffSystem")
-			if debuff_sys and debuff_sys.has_method("add_debuff"):
-				debuff_sys.call("add_debuff", Debuff.create(debuff_t, duration))
+			var enemy_debuff_system: Node = enemy.get_node_or_null("DebuffSystem")
+			if enemy_debuff_system and enemy_debuff_system.has_method("add_debuff"):
+				enemy_debuff_system.call("add_debuff", Debuff.create(debuff_t, duration))
 		return
 
 	# Single-target debuff
@@ -193,11 +195,11 @@ func _resolve_debuff(effect: CardEffect) -> void:
 	if target == null:
 		return
 
-	var debuff_sys: Node = target.get_node_or_null("DebuffSystem")
-	if debuff_sys == null or not debuff_sys.has_method("add_debuff"):
+	var target_debuff_system: Node = target.get_node_or_null("DebuffSystem")
+	if target_debuff_system == null or not target_debuff_system.has_method("add_debuff"):
 		return
 
-	debuff_sys.call("add_debuff", Debuff.create(debuff_t, duration))
+	target_debuff_system.call("add_debuff", Debuff.create(debuff_t, duration))
 
 func _resolve_multi_hit(effect: CardEffect, is_x_cost: bool = false) -> void:
 	## Deal damage N times with staggered visuals.

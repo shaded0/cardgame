@@ -147,3 +147,23 @@ func test_tactical_focus_teardown_restores_the_previous_time_scale() -> void:
 	root.propagate_notification(Node.NOTIFICATION_EXIT_TREE)
 
 	assert_near(Engine.time_scale, 0.45, 0.001, "Destroying CardManager mid-focus should restore the pre-existing time scale instead of forcing normal speed.")
+
+func test_reshuffle_does_not_duplicate_other_cards_still_in_hand() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 100.0, 10.0)
+	var card_manager: CardManager = Factory.add_card_manager(player)
+	var a = Factory.make_card("A", 0)
+	var b = Factory.make_card("B", 0)
+	var c = Factory.make_card("C", 0)
+	var d = Factory.make_card("D", 0)
+	card_manager.deck = [a, b, c, d]
+	card_manager.draw_pile = []
+	card_manager.hand = [a, b, c, d]
+
+	card_manager.try_play_card(0)
+
+	assert_eq(mana.current_mana, 10.0, "Playing a zero-cost card through the reshuffle path should not spend mana.")
+	assert_eq(card_manager.hand[1], b, "Reshuffling should not replace or duplicate cards that are still in hand.")
+	assert_eq(card_manager.hand[2], c, "Reshuffling should preserve the other live hand slots.")
+	assert_eq(card_manager.hand[3], d, "Reshuffling should not draw cards that are already visible in hand.")
+	assert_eq(card_manager.hand[0], a, "With only the played card eligible for reshuffle, the replacement draw should come from that spent card.")

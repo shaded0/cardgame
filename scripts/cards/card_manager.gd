@@ -49,7 +49,7 @@ func initialize_deck(card_pool: Array[CardData]) -> void:
 		return
 
 	for i in range(HAND_SIZE):
-		hand.append(_draw_next_card())
+		hand.append(_draw_next_card(false))
 
 	hand_updated.emit(hand.duplicate())
 	draw_pile_changed.emit(draw_pile.size())
@@ -142,6 +142,9 @@ func _replace_card(slot_index: int, played_card: CardData) -> void:
 		deck.erase(played_card)
 		card_exhausted.emit(played_card)
 
+	# Clear the played slot before redrawing so reshuffles can include the spent card
+	# without duplicating cards that are still sitting in the hand.
+	hand[slot_index] = null
 	hand[slot_index] = _draw_next_card()
 
 func can_play_card(card: CardData, available_mana: float) -> bool:
@@ -216,9 +219,9 @@ func get_deck_status() -> Dictionary:
 		"exhaust_pile": exhaust_pile.duplicate(),
 	}
 
-func _draw_next_card() -> CardData:
+func _draw_next_card(exclude_hand_on_reshuffle: bool = true) -> CardData:
 	if draw_pile.is_empty():
-		draw_pile = deck.duplicate()
+		draw_pile = _build_reshuffle_pile(exclude_hand_on_reshuffle)
 		draw_pile.shuffle()
 		deck_reshuffled.emit()
 
@@ -229,3 +232,16 @@ func _draw_next_card() -> CardData:
 	var card: CardData = draw_pile.pop_back()
 	draw_pile_changed.emit(draw_pile.size())
 	return card
+
+func _build_reshuffle_pile(exclude_hand_cards: bool) -> Array[CardData]:
+	if not exclude_hand_cards:
+		return deck.duplicate()
+
+	var reshuffle: Array[CardData] = []
+	for card in deck:
+		if card == null:
+			continue
+		if card in hand:
+			continue
+		reshuffle.append(card)
+	return reshuffle

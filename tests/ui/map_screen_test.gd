@@ -51,3 +51,26 @@ func test_map_screen_disconnects_room_completed_listener_on_exit() -> void:
 	root.propagate_notification(Node.NOTIFICATION_EXIT_TREE)
 
 	assert_false(GameManager.room_completed.is_connected(room_completed_cb), "Map screen should disconnect from room_completed when leaving the tree.")
+
+func test_map_screen_only_opens_one_rest_overlay_for_repeated_clicks() -> void:
+	GameManager.run_active = true
+	GameManager.completed_rooms.clear()
+	var rest_room := Factory.make_room("rest", 1, [], RoomData.RoomType.REST)
+	GameManager.all_rooms = [
+		Factory.make_room("entrance", 0, ["rest"]),
+		rest_room,
+	]
+	GameManager.completed_rooms.append("entrance")
+
+	var map_screen := MapScreenScript.new()
+	root.add_child(map_screen)
+
+	map_screen._on_room_clicked(rest_room)
+	map_screen._on_room_clicked(rest_room)
+
+	var rest_screen_count := 0
+	for child in map_screen.get_children():
+		if child is RestScreen:
+			rest_screen_count += 1
+
+	assert_eq(rest_screen_count, 1, "Repeated clicks on a rest room should not stack multiple RestScreen overlays.")

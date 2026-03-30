@@ -84,7 +84,10 @@ func _ready() -> void:
 	var config: ClassConfig = GameManager.current_class_config
 	if config:
 		apply_class_config(config)
-	_log_attack("ready", {"class": GameManager.current_class_config.class_id if GameManager.current_class_config else "none"})
+	var class_id: String = "none"
+	if GameManager.current_class_config != null:
+		class_id = String(GameManager.current_class_config.class_id)
+	_log_attack("ready", {"class": class_id})
 
 func _on_player_hit(hb: Hitbox) -> void:
 	## Central damage handler: applies buff reductions, knockback, mana gain.

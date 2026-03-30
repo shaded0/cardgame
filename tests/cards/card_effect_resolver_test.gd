@@ -36,3 +36,19 @@ func test_heal_and_mana_generation_effects_update_player_resources() -> void:
 
 	assert_eq(player.get_node("HealthComponent").current_health, 75.0, "Heal effects should restore player health.")
 	assert_eq(player.get_node("ManaComponent").current_mana, 28.0, "Mana generation effects should add mana through ManaComponent.")
+
+func test_zero_duration_empower_buff_stays_stack_based_until_spent() -> void:
+	var player := Factory.make_player(root)
+	var buff_system = Factory.add_buff_system(player)
+	var card_manager = Factory.add_card_manager(player)
+	var resolver = Factory.add_card_resolver(card_manager)
+	var effect = Factory.make_effect(CardEffect.EffectType.BUFF, 12.0, CardEffect.TargetMode.SELF)
+	effect.buff_type = CardEffect.BuffType.EMPOWER_NEXT
+	effect.stacks = 2
+	effect.duration = 0.0
+
+	resolver.resolve_effect(effect)
+	buff_system._process(10.0)
+
+	assert_eq(buff_system.empowered_attacks, 2, "Zero-duration empower effects should remain available until their stacks are consumed.")
+	assert_eq(buff_system.empower_bonus, 12.0, "Zero-duration empower effects should keep their configured damage bonus instead of being forced onto a timer.")

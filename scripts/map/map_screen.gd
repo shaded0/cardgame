@@ -9,6 +9,8 @@ const NODE_RADIUS: float = 28.0
 
 var room_buttons: Dictionary = {}  # room_id -> Button
 var room_button_pulses: Dictionary = {}  # room_id -> Tween
+var _room_selection_locked: bool = false
+var _active_rest_screen: RestScreen = null
 
 func _ready() -> void:
 	if not GameManager.run_active:
@@ -204,6 +206,8 @@ func _refresh_button_states() -> void:
 			btn.disabled = true
 
 func _on_room_clicked(room: RoomData) -> void:
+	if _room_selection_locked:
+		return
 	if not GameManager.is_room_available(room):
 		return
 
@@ -213,12 +217,20 @@ func _on_room_clicked(room: RoomData) -> void:
 		var rest_screen: RestScreen = rest_scene.instantiate() as RestScreen
 		if rest_screen == null:
 			return
+		_room_selection_locked = true
+		_active_rest_screen = rest_screen
 		add_child(rest_screen)
 		rest_screen.rest_completed.connect(func() -> void:
 			GameManager.enter_room(room)
 			_refresh_button_states()
 		)
+		rest_screen.tree_exited.connect(func() -> void:
+			if _active_rest_screen == rest_screen:
+				_active_rest_screen = null
+				_room_selection_locked = false
+		)
 	else:
+		_room_selection_locked = true
 		GameManager.enter_room(room)
 
 func _on_room_completed(_room_id: String) -> void:

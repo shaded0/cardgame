@@ -183,7 +183,6 @@ func _create_ember() -> Dictionary:
 	}
 
 func _update_embers(delta: float) -> void:
-	var vp_size := get_viewport_rect().size
 	for i in range(_ember_particles.size()):
 		var ember := _ember_particles[i]
 		ember["age"] += delta

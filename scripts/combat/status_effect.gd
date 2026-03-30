@@ -36,18 +36,18 @@ static func create(p_type: Type, p_damage: float = 0.0, p_duration: float = 3.0,
 	effect._tick_timer = p_tick_interval
 	return effect
 
-static func burn(damage: float = 3.0, duration: float = 4.0) -> StatusEffect:
+static func burn(damage: float = 3.0, effect_duration: float = 4.0) -> StatusEffect:
 	# Damage over time; tick cadence stays fast for perceived burn persistence.
-	return create(Type.BURN, damage, duration, 0.0, 0.5)
+	return create(Type.BURN, damage, effect_duration, 0.0, 0.5)
 
-static func slow(percent: float = 0.4, duration: float = 3.0) -> StatusEffect:
+static func slow(percent: float = 0.4, effect_duration: float = 3.0) -> StatusEffect:
 	# Percentage-based slow with no direct damage.
-	return create(Type.SLOW, 0.0, duration, percent)
+	return create(Type.SLOW, 0.0, effect_duration, percent)
 
-static func poison(damage: float = 2.0, duration: float = 6.0) -> StatusEffect:
+static func poison(damage: float = 2.0, effect_duration: float = 6.0) -> StatusEffect:
 	# Slower tick cadence to make poison visually feel distinct from burn.
-	return create(Type.POISON, damage, duration, 0.0, 1.0)
+	return create(Type.POISON, damage, effect_duration, 0.0, 1.0)
 
-static func freeze(duration: float = 1.5) -> StatusEffect:
+static func freeze(effect_duration: float = 1.5) -> StatusEffect:
 	# Full crowd-control window used for positioning and punish windows.
-	return create(Type.FREEZE, 0.0, duration, 1.0)
+	return create(Type.FREEZE, 0.0, effect_duration, 1.0)

@@ -21,13 +21,13 @@ static func _get_light_texture() -> Texture2D:
 	_light_texture = ImageTexture.create_from_image(image)
 	return _light_texture
 
-static func _attach_transient_light(node: Node2D, color: Color, energy: float = 0.8, scale: float = 1.5, duration: float = 0.3) -> void:
+static func _attach_transient_light(node: Node2D, color: Color, energy: float = 0.8, light_scale: float = 1.5, duration: float = 0.3) -> void:
 	## Add a brief PointLight2D that fades out and self-destructs.
 	var light := PointLight2D.new()
 	light.texture = _get_light_texture()
 	light.color = color
 	light.energy = energy
-	light.texture_scale = scale
+	light.texture_scale = light_scale
 	light.shadow_enabled = false
 	node.add_child(light)
 	var tween := light.create_tween()

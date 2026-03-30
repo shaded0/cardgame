@@ -4,7 +4,7 @@ extends Node2D
 ## Visual-only arena decorations — no collision, no gameplay impact.
 ## Braziers include fake point lighting via additive-blend sprites.
 
-enum DecorType { BRAZIER, RUBBLE, BONES, CHAIN, LAVA_POOL }
+enum DecorType { BRAZIER, RUBBLE, BONES, CHAIN, LAVA_POOL, TORCH_WALL, BANNER, ALTAR, BLOOD_STAIN, SKULL_PILE }
 
 var _accent_color: Color = Color(0.8, 0.45, 0.15)
 
@@ -24,6 +24,16 @@ func setup(type: DecorType, pos: Vector2, accent: Color = Color(0.8, 0.45, 0.15)
 			_build_chain()
 		DecorType.LAVA_POOL:
 			_build_lava_pool()
+		DecorType.TORCH_WALL:
+			_build_torch_wall()
+		DecorType.BANNER:
+			_build_banner()
+		DecorType.ALTAR:
+			_build_altar()
+		DecorType.BLOOD_STAIN:
+			_build_blood_stain()
+		DecorType.SKULL_PILE:
+			_build_skull_pile()
 
 func _build_brazier() -> void:
 	# Stone base + bowl

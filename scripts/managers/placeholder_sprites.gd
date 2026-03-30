@@ -165,7 +165,6 @@ static func create_enemy_texture(size: int, body_color: Color, enemy_type: Strin
 	match enemy_type:
 		"slime":
 			var light := body_color.lightened(0.2)
-			var dark := body_color.darkened(0.2)
 			# Blob body
 			draw_circle_fn.call(image, Vector2(cx, cy + 2 * s), 12 * s, body_color)
 			draw_circle_fn.call(image, Vector2(cx, cy - 2 * s), 10 * s, light)

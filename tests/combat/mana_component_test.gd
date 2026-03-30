@@ -66,3 +66,11 @@ func test_initialize_clamps_starting_mana_percent() -> void:
 	mana.initialize()
 
 	assert_eq(mana.current_mana, 30.0, "Initializing mana should clamp overly large starting percentages to max mana.")
+
+func test_spend_mana_rejects_non_positive_amounts() -> void:
+	var player := Factory.make_player(root)
+	var mana = Factory.add_mana(player, 30.0, 10.0)
+
+	assert_false(mana.spend_mana(0.0), "Zero-cost mana spends should be rejected at the component layer to avoid accidental free side effects.")
+	assert_false(mana.spend_mana(-4.0), "Negative mana spends should be rejected so callers cannot accidentally add mana through spend_mana.")
+	assert_eq(mana.current_mana, 10.0, "Rejected non-positive spends should leave mana unchanged.")

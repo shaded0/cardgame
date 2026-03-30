@@ -12,6 +12,7 @@ const HurtboxScript = preload("res://scripts/combat/hurtbox.gd")
 const HealthComponentScript = preload("res://scripts/combat/health_component.gd")
 const ManaComponentScript = preload("res://scripts/combat/mana_component.gd")
 const BuffSystemScript = preload("res://scripts/combat/buff_system.gd")
+const DebuffSystemScript = preload("res://scripts/combat/debuff_system.gd")
 const CardManagerScript = preload("res://scripts/cards/card_manager.gd")
 const CardEffectResolverScript = preload("res://scripts/cards/card_effect_resolver.gd")
 const GameManagerScript = preload("res://scripts/managers/game_manager.gd")
@@ -102,6 +103,12 @@ static func add_buff_system(owner: Node) -> Node:
 	buff_system.name = "BuffSystem"
 	owner.add_child(buff_system)
 	return buff_system
+
+static func add_debuff_system(owner: Node) -> Node:
+	var debuff_system = DebuffSystemScript.new()
+	debuff_system.name = "DebuffSystem"
+	owner.add_child(debuff_system)
+	return debuff_system
 
 static func add_card_manager(owner: Node) -> Node:
 	var card_manager = CardManagerScript.new()

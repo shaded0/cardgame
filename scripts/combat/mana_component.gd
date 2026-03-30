@@ -48,6 +48,8 @@ func add_mana(amount: float, show_fx: bool = true) -> void:
 
 func spend_mana(amount: float) -> bool:
 	# Return false for callers to cancel action if not enough mana.
+	if amount <= 0.0:
+		return false
 	if current_mana < amount:
 		return false
 	current_mana -= amount

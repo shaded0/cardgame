@@ -8,6 +8,7 @@ var minion_spawn_interval: float = 15.0
 var _minion_timer: float = 0.0
 var _enraged: bool = false
 var _slime_data: EnemyData = null
+var _health_component: HealthComponent = null
 
 func _ready() -> void:
 	_slime_data = preload("res://resources/enemy_data/slime_data.tres")
@@ -16,7 +17,16 @@ func _ready() -> void:
 	await get_tree().process_frame
 	var enemy = get_parent()
 	if enemy and enemy.has_node("HealthComponent"):
-		enemy.get_node("HealthComponent").health_changed.connect(_on_health_changed)
+		_health_component = enemy.get_node("HealthComponent") as HealthComponent
+		var health_changed_cb := Callable(self, "_on_health_changed")
+		if _health_component and not _health_component.health_changed.is_connected(health_changed_cb):
+			_health_component.health_changed.connect(health_changed_cb)
+
+func _exit_tree() -> void:
+	var health_changed_cb := Callable(self, "_on_health_changed")
+	if _health_component and _health_component.health_changed.is_connected(health_changed_cb):
+		_health_component.health_changed.disconnect(health_changed_cb)
+	_health_component = null
 
 func _process(delta: float) -> void:
 	var enemy = get_parent()

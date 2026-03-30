@@ -16,6 +16,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var expired: Array[Debuff] = []
 	for debuff in active_debuffs:
+		if debuff.duration <= 0.0:
+			continue
 		debuff.remaining -= delta
 		if debuff.remaining <= 0.0:
 			expired.append(debuff)

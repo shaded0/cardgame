@@ -14,6 +14,7 @@ var player: CharacterBody2D
 var bonus_damage: float = 0.0
 var bonus_speed: float = 0.0
 var damage_reduction: float = 0.0  # 0.0 to 1.0 (percentage)
+var _damage_reduction_total: float = 0.0
 var empowered_attacks: int = 0  # Next N attacks deal bonus damage
 var empower_bonus: float = 0.0
 
@@ -61,10 +62,10 @@ func _apply_buff_stats(buff: Buff) -> void:
 			if player:
 				player.move_speed += buff.value
 		Buff.Type.DEFENSE_UP:
-			damage_reduction = min(damage_reduction + buff.value / 100.0, 0.8)
+			_damage_reduction_total += buff.value / 100.0
+			damage_reduction = min(_damage_reduction_total, 0.8)
 		Buff.Type.EMPOWER_NEXT:
-			empowered_attacks += int(buff.stacks)
-			empower_bonus = max(empower_bonus, buff.value)
+			_recompute_empower_state()
 		Buff.Type.DODGE_BOOST:
 			if player:
 				player.dodge_speed += buff.value
@@ -80,9 +81,10 @@ func _remove_buff_stats(buff: Buff) -> void:
 			if player:
 				player.move_speed -= buff.value
 		Buff.Type.DEFENSE_UP:
-			damage_reduction = max(0.0, damage_reduction - buff.value / 100.0)
+			_damage_reduction_total = max(0.0, _damage_reduction_total - buff.value / 100.0)
+			damage_reduction = min(_damage_reduction_total, 0.8)
 		Buff.Type.EMPOWER_NEXT:
-			pass  # Stacks consumed on use, not on expiry
+			_recompute_empower_state()
 		Buff.Type.DODGE_BOOST:
 			if player:
 				player.dodge_speed -= buff.value
@@ -93,9 +95,7 @@ func get_modified_damage(base_damage: float) -> float:
 	var total: float = base_damage + bonus_damage
 	if empowered_attacks > 0:
 		total += empower_bonus
-		empowered_attacks -= 1
-		if empowered_attacks <= 0:
-			empower_bonus = 0.0
+		_consume_empower_stack()
 	return total
 
 func get_damage_after_reduction(incoming: float) -> float:
@@ -108,6 +108,34 @@ func has_buff_type(type: Buff.Type) -> bool:
 		if buff.type == type:
 			return true
 	return false
+
+func _recompute_empower_state() -> void:
+	empowered_attacks = 0
+	empower_bonus = 0.0
+	for buff in active_buffs:
+		if buff.type != Buff.Type.EMPOWER_NEXT or buff.stacks <= 0:
+			continue
+		empowered_attacks += buff.stacks
+		empower_bonus = max(empower_bonus, buff.value)
+
+func _consume_empower_stack() -> void:
+	var strongest_buff: Buff = null
+	for buff in active_buffs:
+		if buff.type != Buff.Type.EMPOWER_NEXT or buff.stacks <= 0:
+			continue
+		if strongest_buff == null or buff.value > strongest_buff.value:
+			strongest_buff = buff
+
+	if strongest_buff == null:
+		_recompute_empower_state()
+		return
+
+	strongest_buff.stacks -= 1
+	if strongest_buff.stacks <= 0:
+		active_buffs.erase(strongest_buff)
+		buff_expired.emit(strongest_buff)
+
+	_recompute_empower_state()
 
 func _show_buff_visual(buff: Buff) -> void:
 	# Small temporary burst gives immediate user feedback when a buff is granted.

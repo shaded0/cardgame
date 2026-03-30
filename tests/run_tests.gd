@@ -17,7 +17,7 @@ func _run() -> void:
 		return
 
 	for test_file in test_files:
-		_run_test_file(test_file)
+		await _run_test_file(test_file)
 
 	var passed := _test_count - _failures.size()
 	print("")
@@ -79,7 +79,7 @@ func _run_test_file(test_path: String) -> void:
 		return
 
 	for method_name in methods:
-		_run_single_test(test_path, script, method_name)
+		await _run_single_test(test_path, script, method_name)
 
 func _discover_test_methods(test_case: Object) -> Array[String]:
 	var methods: Array[String] = []
@@ -101,9 +101,9 @@ func _run_single_test(test_path: String, script: Script, method_name: String) ->
 
 	test_case.set_context(self, sandbox)
 	test_case.begin_test(method_name)
-	test_case.before_each()
-	test_case.call(method_name)
-	test_case.after_each()
+	await test_case.before_each()
+	await test_case.call(method_name)
+	await test_case.after_each()
 
 	var failures: Array[String] = test_case.get_failures()
 	if failures.is_empty():

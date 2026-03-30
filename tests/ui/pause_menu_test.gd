@@ -96,3 +96,15 @@ func test_pause_menu_quit_uses_game_manager_resume_path() -> void:
 
 	assert_false(get_tree().paused, "Quitting from the pause menu should still unpause the tree before changing scenes.")
 	assert_eq(resumed_count, 1, "Quitting from pause should emit game_resumed through GameManager so other pause listeners can clean up.")
+	assert_eq(GameManager._pending_scene_path, GameManager.CLASS_SELECT_SCENE_PATH, "Quitting from pause should queue the class-select scene transition.")
+
+func test_pause_menu_quit_button_routes_to_class_select_transition() -> void:
+	var pause_menu: Control = PauseMenuScene.instantiate()
+	root.add_child(pause_menu)
+
+	get_tree().paused = true
+	var quit_button: Button = pause_menu.get_node("Panel/VBoxContainer/QuitButton")
+	quit_button.emit_signal("pressed")
+
+	assert_false(get_tree().paused, "Pressing Quit to Menu should unpause the scene tree before changing scenes.")
+	assert_eq(GameManager._pending_scene_path, GameManager.CLASS_SELECT_SCENE_PATH, "Pressing Quit to Menu should route through the class-select transition flow.")

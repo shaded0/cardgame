@@ -27,3 +27,16 @@ func test_class_select_ignores_repeat_selection_while_transitioning() -> void:
 
 	assert_eq(flash_count, 1, "Selecting a class twice quickly should only create one transition flash.")
 	assert_eq(GameManager.current_class_config.class_id, &"soldier", "Once class selection starts, later clicks should not swap the chosen class mid-transition.")
+
+func test_class_select_unpauses_through_game_manager_resume_signal() -> void:
+	var resumed_count := 0
+	GameManager.game_resumed.connect(func() -> void:
+		resumed_count += 1
+	, CONNECT_ONE_SHOT)
+
+	tree.paused = true
+	var class_select: Control = ClassSelectScene.instantiate()
+	root.add_child(class_select)
+
+	assert_false(tree.paused, "Class select should unpause the tree if the previous scene left the game paused.")
+	assert_eq(resumed_count, 1, "Class select should resume through GameManager so pause listeners receive the same cleanup signal as other resume flows.")

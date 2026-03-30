@@ -168,6 +168,39 @@ func _draw_tile_cracks(points: PackedVector2Array, base_color: Color, seed_val: 
 		var end := start + Vector2(cos(angle) * length, sin(angle) * length * 0.5)
 		_owner.draw_line(start, end, crack_color, 1.0)
 
+func _make_crumbled_points(points: PackedVector2Array, seed_val: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	var corner1: int = int(seed_val * 7.0) % 4
+	var corner2: int = -1
+	if seed_val > 0.6:
+		corner2 = (int(seed_val * 13.0) + 2) % 4
+
+	for i in range(4):
+		var prev_i: int = (i - 1 + 4) % 4
+		var next_i: int = (i + 1) % 4
+		if i == corner1 or i == corner2:
+			var t1: float = 0.3 + seed_val * 0.1
+			var t2: float = 0.3 + fmod(seed_val * 3.7, 0.15)
+			result.append(points[prev_i].lerp(points[i], 1.0 - t1))
+			result.append(points[next_i].lerp(points[i], 1.0 - t2))
+		else:
+			result.append(points[i])
+	return result
+
+func _make_chipped_points(points: PackedVector2Array, seed_val: float) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	var corner: int = int(seed_val * 11.0) % 4
+	for i in range(4):
+		if i == corner:
+			var prev_i: int = (i - 1 + 4) % 4
+			var next_i: int = (i + 1) % 4
+			var t: float = 0.15 + seed_val * 0.05
+			result.append(points[prev_i].lerp(points[i], 1.0 - t))
+			result.append(points[next_i].lerp(points[i], 1.0 - t))
+		else:
+			result.append(points[i])
+	return result
+
 func _draw_lava_veins(palette: Dictionary, grid_count: int, tile_w: int, tile_h: int) -> void:
 	var vein_color: Color = palette["edge_outer"]
 	vein_color.a = 0.25
@@ -248,12 +281,105 @@ func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int) -> void:
 
 func _draw_wall_silhouettes(palette: Dictionary, grid_count: int, floor_theme: int) -> void:
 	var wall_color: Color = palette["void_color"].lightened(0.03)
+	var highlight: Color = palette["void_color"].lightened(0.06)
 	var seed_base: float = float(grid_count * 7 + floor_theme * 13)
 	for i in range(7):
 		var angle: float = fmod(seed_base + float(i) * 1.3, TAU)
 		var dist: float = 1300.0 + fmod(absf(sin(seed_base + float(i) * 2.1)), 1.0) * 500.0
 		var cx: float = cos(angle) * dist
 		var cy: float = sin(angle) * dist * 0.5
-		var width: float = 80.0 + fmod(absf(sin(float(i) * 3.7)), 1.0) * 200.0
-		var height: float = 120.0 + fmod(absf(sin(float(i) * 5.3)), 1.0) * 180.0
-		_owner.draw_rect(Rect2(cx - width * 0.5, cy - height, width, height), wall_color)
+		var w: float = 80.0 + fmod(absf(sin(float(i) * 3.7)), 1.0) * 200.0
+		var h: float = 120.0 + fmod(absf(sin(float(i) * 5.3)), 1.0) * 180.0
+		match i % 3:
+			0:
+				_draw_crumbling_wall(cx, cy, w, h, wall_color, highlight, i, seed_base)
+			1:
+				_draw_arched_doorway(cx, cy, w, h, wall_color, highlight)
+			2:
+				_draw_column_cluster(cx, cy, w, h, wall_color, highlight, i, seed_base)
+
+func _draw_crumbling_wall(cx: float, cy: float, w: float, h: float, color: Color, highlight: Color, idx: int, seed_base: float) -> void:
+	var left: float = cx - w * 0.5
+	var right: float = cx + w * 0.5
+	var bottom: float = cy
+	var top: float = cy - h
+	# Jagged top edge
+	var top_points := PackedVector2Array()
+	top_points.append(Vector2(left, bottom))
+	var seg_count: int = 6
+	for s in range(seg_count + 1):
+		var t: float = float(s) / float(seg_count)
+		var px: float = lerpf(left, right, t)
+		var jag: float = sin(seed_base + float(idx) * 2.3 + float(s) * 1.7) * h * 0.25
+		top_points.append(Vector2(px, top + absf(jag)))
+	top_points.append(Vector2(right, bottom))
+	_owner.draw_colored_polygon(top_points, color)
+	# Crack lines
+	for c in range(2):
+		var crack_x: float = lerpf(left + w * 0.2, right - w * 0.2, float(c + 1) / 3.0)
+		var crack_top: float = top + h * 0.15
+		var crack_bottom: float = bottom - h * 0.1
+		var crack_col := highlight
+		crack_col.a = 0.4
+		_owner.draw_line(Vector2(crack_x, crack_top), Vector2(crack_x + sin(seed_base + float(c) * 4.0) * 6.0, crack_bottom), crack_col, 1.0)
+
+func _draw_arched_doorway(cx: float, cy: float, w: float, h: float, color: Color, highlight: Color) -> void:
+	var pillar_w: float = w * 0.25
+	var gap: float = w - pillar_w * 2.0
+	var left: float = cx - w * 0.5
+	var right: float = cx + w * 0.5
+	var bottom: float = cy
+	var top: float = cy - h
+	# Left pillar
+	_owner.draw_colored_polygon(PackedVector2Array([
+		Vector2(left, top + h * 0.15), Vector2(left + pillar_w, top + h * 0.15),
+		Vector2(left + pillar_w, bottom), Vector2(left, bottom),
+	]), color)
+	# Right pillar
+	_owner.draw_colored_polygon(PackedVector2Array([
+		Vector2(right - pillar_w, top + h * 0.15), Vector2(right, top + h * 0.15),
+		Vector2(right, bottom), Vector2(right - pillar_w, bottom),
+	]), color)
+	# Arch
+	var arch_points := PackedVector2Array()
+	arch_points.append(Vector2(left, top + h * 0.15))
+	var arch_segs: int = 10
+	for s in range(arch_segs + 1):
+		var a: float = PI + float(s) / float(arch_segs) * PI
+		var arch_cx: float = cx
+		var arch_rx: float = w * 0.5
+		var arch_ry: float = h * 0.45
+		arch_points.append(Vector2(arch_cx + cos(a) * arch_rx, top + h * 0.15 + sin(a) * arch_ry))
+	arch_points.append(Vector2(right, top + h * 0.15))
+	_owner.draw_colored_polygon(arch_points, color)
+	# Keystone
+	_owner.draw_colored_polygon(PackedVector2Array([
+		Vector2(cx - 4, top - h * 0.05), Vector2(cx + 4, top - h * 0.05),
+		Vector2(cx + 3, top + h * 0.05), Vector2(cx - 3, top + h * 0.05),
+	]), highlight)
+
+func _draw_column_cluster(cx: float, cy: float, w: float, h: float, color: Color, highlight: Color, idx: int, seed_base: float) -> void:
+	var col_w: float = w * 0.18
+	var gap: float = w * 0.08
+	var total_w: float = col_w * 3.0 + gap * 2.0
+	var start_x: float = cx - total_w * 0.5
+	var bottom: float = cy
+	var heights := [h * 0.7, h, h * 0.85]
+	var lean := sin(seed_base + float(idx) * 2.9) * 3.0
+	for c in range(3):
+		var col_x: float = start_x + float(c) * (col_w + gap)
+		var col_h: float = heights[c]
+		var col_top: float = bottom - col_h
+		var x_offset: float = lean if c == 0 else 0.0
+		# Column shaft
+		_owner.draw_colored_polygon(PackedVector2Array([
+			Vector2(col_x + x_offset, col_top), Vector2(col_x + col_w + x_offset, col_top),
+			Vector2(col_x + col_w, bottom), Vector2(col_x, bottom),
+		]), color)
+		# Capital at top
+		var cap_w: float = col_w * 1.4
+		var cap_offset: float = (cap_w - col_w) * 0.5
+		_owner.draw_colored_polygon(PackedVector2Array([
+			Vector2(col_x + x_offset - cap_offset, col_top - 4), Vector2(col_x + col_w + x_offset + cap_offset, col_top - 4),
+			Vector2(col_x + col_w + x_offset + cap_offset, col_top), Vector2(col_x + x_offset - cap_offset, col_top),
+		]), highlight)

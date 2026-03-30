@@ -30,7 +30,8 @@ var _is_selecting: bool = false
 
 func _ready() -> void:
 	# Defensive reset in case the previous scene left the tree paused.
-	get_tree().paused = false
+	if get_tree().paused:
+		GameManager.toggle_pause()
 
 	# Apply fire shader to background
 	_setup_fire_background()

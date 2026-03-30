@@ -2,8 +2,70 @@ extends "res://tests/support/test_case.gd"
 
 const PauseMenuScene = preload("res://scenes/ui/pause_menu.tscn")
 
+var _saved_transitioning := false
+var _saved_pending_scene_path := ""
+
+func before_each() -> void:
+	_saved_transitioning = GameManager._transitioning
+	_saved_pending_scene_path = GameManager._pending_scene_path
+
 func after_each() -> void:
 	get_tree().paused = false
+	GameManager._transitioning = _saved_transitioning
+	GameManager._pending_scene_path = _saved_pending_scene_path
+	for child in GameManager.get_children():
+		child.free()
+
+func test_pause_menu_processes_during_pause_and_resume_transition() -> void:
+	var pause_menu: Control = PauseMenuScene.instantiate()
+	root.add_child(pause_menu)
+
+	assert_eq(
+		pause_menu.process_mode,
+		Node.PROCESS_MODE_ALWAYS,
+		"Pause menu should keep processing after unpause so its close tween can hide the overlay."
+	)
+
+func test_pause_menu_starts_hidden_and_shows_when_paused() -> void:
+	var pause_menu: Control = PauseMenuScene.instantiate()
+	root.add_child(pause_menu)
+
+	assert_false(pause_menu.visible, "Pause menu should start hidden before the game is paused.")
+
+	pause_menu._on_game_paused()
+
+	assert_true(pause_menu.visible, "Pause menu should become visible when pause handling runs.")
+
+func test_pause_menu_resume_unpauses_tree_and_emits_resume_signal() -> void:
+	var pause_menu: Control = PauseMenuScene.instantiate()
+	root.add_child(pause_menu)
+
+	var resumed_count := 0
+	GameManager.game_resumed.connect(func() -> void:
+		resumed_count += 1
+	, CONNECT_ONE_SHOT)
+
+	get_tree().paused = true
+	pause_menu._on_resume()
+
+	assert_false(get_tree().paused, "Resuming from the pause menu should unpause the scene tree.")
+	assert_eq(resumed_count, 1, "Resuming from the pause menu should emit game_resumed once.")
+
+func test_pause_menu_resume_button_triggers_resume_handler() -> void:
+	var pause_menu: Control = PauseMenuScene.instantiate()
+	root.add_child(pause_menu)
+
+	var resumed_count := 0
+	GameManager.game_resumed.connect(func() -> void:
+		resumed_count += 1
+	, CONNECT_ONE_SHOT)
+
+	get_tree().paused = true
+	var resume_button: Button = pause_menu.get_node("Panel/VBoxContainer/ResumeButton")
+	resume_button.emit_signal("pressed")
+
+	assert_false(get_tree().paused, "Pressing the Resume button should unpause the scene tree.")
+	assert_eq(resumed_count, 1, "Pressing the Resume button should route through the same resume flow.")
 
 func test_pause_menu_disconnects_global_pause_signals_on_exit() -> void:
 	var pause_menu: Control = PauseMenuScene.instantiate()

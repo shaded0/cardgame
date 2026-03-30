@@ -203,3 +203,23 @@ func test_empty_reshuffle_does_not_emit_deck_reshuffled() -> void:
 
 	assert_eq(drawn, null, "Drawing from an empty deck with no eligible reshuffle cards should safely return null.")
 	assert_eq(reshuffle_count, 0, "CardManager should not emit deck_reshuffled when no actual reshuffle occurred.")
+
+func test_initialize_deck_resets_transient_card_combat_state() -> void:
+	Engine.time_scale = 0.65
+	var player := Factory.make_player(root)
+	Factory.add_mana(player, 100.0, 20.0)
+	var card_manager: CardManager = Factory.add_card_manager(player)
+	var free_card = Factory.make_card("Free", 0)
+	var costed_card = Factory.make_card("Costed", 5)
+
+	card_manager._cycle_cooldown_timer = 0.9
+	card_manager._mana_cost_modifier = 3.0
+	card_manager._begin_tactical_focus()
+
+	card_manager.initialize_deck([free_card, costed_card])
+
+	assert_eq(card_manager._cycle_cooldown_timer, 0.0, "Initializing a new deck should clear card-cycle cooldown so a fresh combat does not inherit stale input lockouts.")
+	assert_eq(card_manager._mana_cost_modifier, 0.0, "Initializing a new deck should clear temporary mana cost debuffs from the previous combat.")
+	assert_false(card_manager._tactical_focus_active, "Initializing a new deck should exit tactical focus instead of leaving the card system in a slowed selection state.")
+	assert_near(Engine.time_scale, 0.65, 0.001, "Resetting the deck should restore the pre-focus time scale instead of leaking tactical slowdown into the new deck state.")
+	assert_true(card_manager.can_play_card(costed_card, 5.0), "Freshly initialized decks should use the card's real cost after temporary modifiers are cleared.")

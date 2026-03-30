@@ -14,8 +14,9 @@ extends Control
 var _close_tween: Tween = null
 
 func _ready() -> void:
-	# While paused, regular physics still stops but this UI remains active.
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	# The overlay must keep processing both while paused and during the
+	# resume transition, otherwise the close tween stalls on unpause.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 
 	# Wire button clicks to handlers.

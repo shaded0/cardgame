@@ -37,6 +37,10 @@ func _notification(what: int) -> void:
 			Engine.time_scale = _base_time_scale
 
 func initialize_deck(card_pool: Array[CardData]) -> void:
+	if _tactical_focus_active:
+		_end_tactical_focus()
+	_cycle_cooldown_timer = 0.0
+	_mana_cost_modifier = 0.0
 	deck = card_pool.duplicate()
 	draw_pile = deck.duplicate()
 	draw_pile.shuffle()

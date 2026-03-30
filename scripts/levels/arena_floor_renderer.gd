@@ -79,7 +79,7 @@ func draw_floor(palette: Dictionary, floor_theme: int, grid_count: int, tile_w: 
 	void_col.a = 1.0
 	_owner.draw_rect(Rect2(-3000, -2000, 6000, 4000), void_col)
 
-	_draw_edge_glow(active_palette, grid_count, tile_w)
+	_draw_edge_glow(active_palette, grid_count, tile_w, floor_theme)
 	_draw_wall_silhouettes(active_palette, grid_count, floor_theme)
 
 	for ix in range(-grid_count, grid_count + 1):
@@ -254,7 +254,7 @@ func _draw_floor_runes(palette: Dictionary, floor_theme: int) -> void:
 		ring_color.a = 0.12
 		_owner.draw_polyline(inner_points, ring_color, 1.0)
 
-func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int) -> void:
+func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int, floor_theme: int = 0) -> void:
 	var glow_color: Color = palette["edge_outer"]
 	glow_color.a = 0.10
 	var base_radius: float = float(grid_count) * tile_w * 0.5
@@ -263,10 +263,14 @@ func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int) -> void:
 	for i in range(seg_count):
 		var a1: float = float(i) / float(seg_count) * TAU
 		var a2: float = float(i + 1) / float(seg_count) * TAU
-		var inner1 := Vector2(cos(a1) * base_radius, sin(a1) * base_radius * 0.5)
-		var inner2 := Vector2(cos(a2) * base_radius, sin(a2) * base_radius * 0.5)
-		var outer1 := Vector2(cos(a1) * (base_radius + glow_extent), sin(a1) * (base_radius + glow_extent) * 0.5)
-		var outer2 := Vector2(cos(a2) * (base_radius + glow_extent), sin(a2) * (base_radius + glow_extent) * 0.5)
+		var wobble1: float = sin(a1 * 3.0 + float(floor_theme) * 1.5) * 25.0
+		var wobble2: float = sin(a2 * 3.0 + float(floor_theme) * 1.5) * 25.0
+		var r1: float = base_radius + wobble1
+		var r2: float = base_radius + wobble2
+		var inner1 := Vector2(cos(a1) * r1, sin(a1) * r1 * 0.5)
+		var inner2 := Vector2(cos(a2) * r2, sin(a2) * r2 * 0.5)
+		var outer1 := Vector2(cos(a1) * (r1 + glow_extent), sin(a1) * (r1 + glow_extent) * 0.5)
+		var outer2 := Vector2(cos(a2) * (r2 + glow_extent), sin(a2) * (r2 + glow_extent) * 0.5)
 		var fade_color := Color(glow_color.r, glow_color.g, glow_color.b, 0.0)
 		_owner.draw_primitive(
 			PackedVector2Array([inner1, inner2, outer2]),
@@ -276,6 +280,29 @@ func _draw_edge_glow(palette: Dictionary, grid_count: int, tile_w: int) -> void:
 		_owner.draw_primitive(
 			PackedVector2Array([inner1, outer2, outer1]),
 			PackedColorArray([glow_color, fade_color, fade_color]),
+			PackedVector2Array()
+		)
+	_draw_edge_wisps(palette, base_radius)
+
+func _draw_edge_wisps(palette: Dictionary, base_radius: float) -> void:
+	var wisp_color: Color = palette["edge_outer"]
+	for i in range(10):
+		var angle: float = float(i) / 10.0 * TAU + 0.3
+		var wobble: float = sin(angle * 3.0) * 25.0
+		var r: float = base_radius + wobble
+		var base_pos := Vector2(cos(angle) * r, sin(angle) * r * 0.5)
+		var inward_dir := -base_pos.normalized()
+		var perp := Vector2(-inward_dir.y, inward_dir.x)
+		var wisp_len: float = 40.0 + sin(float(i) * 2.7) * 30.0
+		var wisp_width: float = 6.0 + sin(float(i) * 1.3) * 4.0
+		var tip := base_pos + inward_dir * wisp_len
+		var left := base_pos + perp * wisp_width
+		var right := base_pos - perp * wisp_width
+		var base_col := Color(wisp_color.r, wisp_color.g, wisp_color.b, 0.06)
+		var tip_col := Color(wisp_color.r, wisp_color.g, wisp_color.b, 0.0)
+		_owner.draw_primitive(
+			PackedVector2Array([left, right, tip]),
+			PackedColorArray([base_col, base_col, tip_col]),
 			PackedVector2Array()
 		)
 

@@ -21,6 +21,8 @@ func take_damage(amount: float) -> void:
 	var remaining_damage: float = max(amount, 0.0)
 	if remaining_damage <= 0.0:
 		return
+	if _is_dead and current_health <= 0.0 and shield_health <= 0.0:
+		return
 
 	if shield_health > 0.0 and remaining_damage > 0.0:
 		var absorbed: float = min(shield_health, remaining_damage)

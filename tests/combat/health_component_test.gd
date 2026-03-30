@@ -114,3 +114,23 @@ func test_add_shield_ignores_non_positive_values() -> void:
 
 	assert_eq(health.shield_health, 0.0, "Non-positive shield values should be ignored instead of silently removing shield through the gain API.")
 	assert_eq(updates.size(), 0, "Ignoring non-positive shield gain should not emit health_changed noise.")
+
+func test_dead_health_component_ignores_later_damage_calls() -> void:
+	var player := Factory.make_player(root, false)
+	var health = Factory.add_health(player, 30.0, 10.0)
+
+	var updates: Array[Array] = []
+	var died_count := 0
+	health.health_changed.connect(func(current: float, maximum: float) -> void:
+		updates.append([current, maximum])
+	)
+	health.died.connect(func() -> void:
+		died_count += 1
+	)
+
+	health.take_damage(20.0)
+	health.take_damage(5.0)
+
+	assert_eq(health.current_health, 0.0, "Post-death damage should leave health pinned at zero.")
+	assert_eq(died_count, 1, "Post-death damage should not emit died again.")
+	assert_eq(updates.size(), 1, "Post-death damage should not emit extra health_changed updates once the entity is already dead.")

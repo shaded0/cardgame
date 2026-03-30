@@ -176,12 +176,44 @@ func _draw_connections(container: Control, positions: Dictionary) -> void:
 			if positions.has(room.room_id) and positions.has(conn_id):
 				var from: Vector2 = positions[room.room_id]
 				var to: Vector2 = positions[conn_id]
+				var curve_points := _bezier_curve(from, to, 12)
+
+				var both_completed: bool = room.room_id in GameManager.completed_rooms and conn_id in GameManager.completed_rooms
+
+				# Glow underlay
+				var glow := Line2D.new()
+				for pt in curve_points:
+					glow.add_point(pt)
+				glow.width = 6.0
+				glow.default_color = Color(0.4, 0.35, 0.25, 0.08) if both_completed else Color(0.3, 0.35, 0.45, 0.06)
+				container.add_child(glow)
+
+				# Main line with gradient
 				var line := Line2D.new()
-				line.add_point(from)
-				line.add_point(to)
+				for pt in curve_points:
+					line.add_point(pt)
 				line.width = 2.0
-				line.default_color = Color(0.3, 0.35, 0.45, 0.6)
+				var grad := Gradient.new()
+				if both_completed:
+					grad.set_color(0, Color(0.6, 0.5, 0.25, 0.4))
+					grad.set_color(1, Color(0.6, 0.5, 0.25, 0.7))
+				else:
+					grad.set_color(0, Color(0.3, 0.35, 0.45, 0.3))
+					grad.set_color(1, Color(0.3, 0.35, 0.45, 0.7))
+				line.gradient = grad
 				container.add_child(line)
+
+func _bezier_curve(from: Vector2, to: Vector2, segments: int) -> PackedVector2Array:
+	var mid := (from + to) * 0.5
+	var dx: float = to.x - from.x
+	var control := mid + Vector2(signf(dx + 0.01) * 40.0, 0.0)
+	var points := PackedVector2Array()
+	for i in range(segments + 1):
+		var t: float = float(i) / float(segments)
+		var a: Vector2 = from.lerp(control, t)
+		var b: Vector2 = control.lerp(to, t)
+		points.append(a.lerp(b, t))
+	return points
 
 func _refresh_button_states() -> void:
 	for room in GameManager.all_rooms:

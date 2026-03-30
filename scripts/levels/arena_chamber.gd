@@ -14,7 +14,7 @@ func _ready() -> void:
 	_spawn_random_grass(10)
 
 func _place_obstacles() -> void:
-	var variant: int = randi() % 3
+	var variant: int = randi() % 5
 	match variant:
 		0:
 			# Scattered pillars (original layout, scaled up)
@@ -42,12 +42,57 @@ func _place_obstacles() -> void:
 			_add_obstacle(Obstacle.ObstacleType.WALL_H, Vector2(-240, -180))
 			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(200, -60))
 			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(250, 60))
+		3:
+			# Cross formation — 4 pillars forming +, creates natural sub-rooms
+			_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(0, -180))
+			_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(0, 180))
+			_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(-280, 0))
+			_add_obstacle(Obstacle.ObstacleType.PILLAR, Vector2(280, 0))
+			_add_obstacle(Obstacle.ObstacleType.WALL_V, Vector2(0, -80))
+			_add_obstacle(Obstacle.ObstacleType.WALL_V, Vector2(0, 80))
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(-150, -75))
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(150, 75))
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(-150, 75))
+		4:
+			# Arena pit — wide ring of pillars with open center
+			for i in range(8):
+				var angle: float = float(i) / 8.0 * TAU
+				var pos := Vector2(cos(angle) * 380.0, sin(angle) * 190.0)
+				_add_obstacle(Obstacle.ObstacleType.PILLAR, pos)
+			# Scattered crates inside the ring
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(-100, -40))
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(120, 50))
+			_add_obstacle(Obstacle.ObstacleType.CRATE, Vector2(0, -90))
 
 func _place_decorations() -> void:
-	# 4 braziers at cardinal edges for atmosphere
-	_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(-500, 0))
-	_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(500, 0))
-	_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(0, -250))
-	_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(0, 250))
-	# Random scatter of rubble/bones
-	_spawn_random_decorations(6)
+	match floor_theme:
+		FloorTheme.RITUAL:
+			# Ritual chamber — altar centerpiece, skull piles, blood
+			_add_decoration(ArenaDecoration.DecorType.ALTAR, Vector2(0, 0))
+			_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(-220, -110))
+			_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(220, -110))
+			_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(-220, 110))
+			_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(220, 110))
+			_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(-60, 30))
+			_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(80, -40))
+			_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(20, 80))
+			_spawn_perimeter_decorations(8, 4)
+			_spawn_random_decorations(4)
+		FloorTheme.MAGMA_CORRIDOR:
+			# Magma chamber — braziers and lava pools
+			_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(-500, 0))
+			_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(500, 0))
+			_add_decoration(ArenaDecoration.DecorType.LAVA_POOL, Vector2(-350, -120))
+			_add_decoration(ArenaDecoration.DecorType.LAVA_POOL, Vector2(350, 120))
+			_spawn_perimeter_decorations(6, 2)
+			_spawn_random_decorations(4)
+		_:
+			# Antechamber / default — braziers with banner flanks
+			_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(-500, 0))
+			_add_decoration(ArenaDecoration.DecorType.BRAZIER, Vector2(500, 0))
+			_add_decoration(ArenaDecoration.DecorType.BANNER, Vector2(-450, -80))
+			_add_decoration(ArenaDecoration.DecorType.BANNER, Vector2(-450, 80))
+			_add_decoration(ArenaDecoration.DecorType.BANNER, Vector2(450, -80))
+			_add_decoration(ArenaDecoration.DecorType.BANNER, Vector2(450, 80))
+			_spawn_perimeter_decorations(8, 4)
+			_spawn_random_decorations(6)

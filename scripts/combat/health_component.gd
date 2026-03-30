@@ -46,7 +46,9 @@ func heal(amount: float) -> void:
 
 func add_shield(amount: float) -> void:
 	# Shield extends effective survivability without permanently raising max health.
-	shield_health = max(shield_health + amount, 0.0)
+	if amount <= 0.0:
+		return
+	shield_health += amount
 	_emit_health_changed()
 
 func set_current_health(value: float) -> void:

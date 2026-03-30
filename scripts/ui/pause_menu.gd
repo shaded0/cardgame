@@ -192,5 +192,6 @@ func _on_resume() -> void:
 
 func _on_quit() -> void:
 	# Exiting pause before changing scene avoids getting stuck in paused game state.
-	get_tree().paused = false
+	if get_tree().paused:
+		GameManager.toggle_pause()
 	GameManager.go_to_class_select()

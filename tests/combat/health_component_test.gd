@@ -99,3 +99,18 @@ func test_set_current_health_clears_temporary_shield() -> void:
 
 	assert_eq(health.current_health, 40.0, "Direct health restores should set the requested HP value.")
 	assert_eq(health.shield_health, 0.0, "Direct health restores should clear temporary shield so it cannot leak across rooms or scripted resets.")
+
+func test_add_shield_ignores_non_positive_values() -> void:
+	var player := Factory.make_player(root, false)
+	var health = Factory.add_health(player, 100.0, 60.0)
+
+	var updates: Array[Array] = []
+	health.health_changed.connect(func(current: float, maximum: float) -> void:
+		updates.append([current, maximum])
+	)
+
+	health.add_shield(-10.0)
+	health.add_shield(0.0)
+
+	assert_eq(health.shield_health, 0.0, "Non-positive shield values should be ignored instead of silently removing shield through the gain API.")
+	assert_eq(updates.size(), 0, "Ignoring non-positive shield gain should not emit health_changed noise.")

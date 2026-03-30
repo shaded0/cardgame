@@ -39,5 +39,25 @@ func _place_decorations() -> void:
 	# 2 lava pools near edges
 	_add_decoration(ArenaDecoration.DecorType.LAVA_POOL, Vector2(-550, 0))
 	_add_decoration(ArenaDecoration.DecorType.LAVA_POOL, Vector2(550, 0))
-	# Heavy scatter of rubble and bones
-	_spawn_random_decorations(10)
+	# Throne altar at far end
+	_add_decoration(ArenaDecoration.DecorType.ALTAR, Vector2(0, -220))
+	# Alcove clusters between corner pillars
+	_spawn_alcove_cluster(Vector2(-350, 0))
+	_spawn_alcove_cluster(Vector2(350, 0))
+	_spawn_alcove_cluster(Vector2(0, -350))
+	_spawn_alcove_cluster(Vector2(0, 280))
+	# Skull piles in the outer ring
+	_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(-480, -100))
+	_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(480, 100))
+	_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(-200, -300))
+	_add_decoration(ArenaDecoration.DecorType.SKULL_PILE, Vector2(200, 300))
+	# Blood stains near center
+	_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(-60, 40))
+	_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(90, -30))
+	_add_decoration(ArenaDecoration.DecorType.BLOOD_STAIN, Vector2(30, 100))
+	# Dense perimeter illumination
+	_spawn_perimeter_decorations(12, 6)
+	# Edge pillar colonnade
+	_spawn_edge_pillars(8)
+	# Heavy scatter
+	_spawn_random_decorations(8)

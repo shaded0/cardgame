@@ -54,9 +54,27 @@ func start_new_run() -> void:
 	run_deck = current_class_config.card_pool.duplicate() if current_class_config else []
 	_load_all_rooms()
 
+func start_new_run_with_deck(deck: Array[CardData]) -> void:
+	run_active = true
+	current_room = null
+	completed_rooms.clear()
+	player_health_carry = -1.0
+	run_deck = deck
+	_load_all_rooms()
+
+func enter_entrance_room() -> void:
+	var entrance: RoomData = get_room_by_id("entrance")
+	if entrance:
+		enter_room(entrance)
+	else:
+		push_error("No entrance room found")
+		go_to_map()
+
 const MIN_DECK_SIZE: int = 4
 
 func add_card_to_deck(card: CardData) -> void:
+	if card == null:
+		return
 	run_deck.append(card)
 
 func remove_card_from_deck(deck_index: int) -> bool:

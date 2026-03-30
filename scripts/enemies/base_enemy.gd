@@ -35,6 +35,7 @@ var separation_strength: float = 80.0
 
 func _ready() -> void:
 	add_to_group("enemies")
+	CombatFeedback.prewarm_common_assets()
 
 	_disable_attack_hitbox()
 
@@ -335,17 +336,8 @@ func _on_received_hit(incoming_hitbox: Hitbox) -> void:
 	if current_state == State.DEAD:
 		return
 
-	# Floating damage number + white flash + sparks
-	DamageNumber.spawn(get_parent(), global_position, final_damage, Color(1.0, 1.0, 1.0))
-	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 4, Color(1.0, 0.8, 0.3))
-	ScreenFX.shake(self, 4.0, 0.08)
-
+	CombatFeedback.show_enemy_hit(self, get_parent(), anim_sprite, global_position, final_damage)
 	modulate = Color(3, 3, 3, 1)
-	# Scale punch on hit
-	var punch_tween := create_tween()
-	punch_tween.tween_property(anim_sprite, "scale", Vector2(1.15, 0.85), 0.04)
-	punch_tween.tween_property(anim_sprite, "scale", Vector2(0.95, 1.05), 0.04)
-	punch_tween.tween_property(anim_sprite, "scale", Vector2(1.0, 1.0), 0.04)
 
 	if is_inside_tree():
 		var flash_timer: SceneTreeTimer = get_tree().create_timer(0.08)

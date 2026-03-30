@@ -6,6 +6,7 @@ extends Node2D
 
 ## Cached light gradient texture shared by all transient lights.
 static var _light_texture: Texture2D = null
+static var _mana_gain_dot_textures: Array[Texture2D] = []
 
 static func _get_light_texture() -> Texture2D:
 	if _light_texture:
@@ -20,6 +21,18 @@ static func _get_light_texture() -> Texture2D:
 			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
 	_light_texture = ImageTexture.create_from_image(image)
 	return _light_texture
+
+static func prewarm_common_effects() -> void:
+	## Prebuild common first-hit assets so combat doesn't hitch on first contact.
+	_get_light_texture()
+	_get_mana_gain_dot_textures()
+
+static func _get_mana_gain_dot_textures() -> Array[Texture2D]:
+	if _mana_gain_dot_textures.is_empty():
+		var color := Color(0.3, 0.5, 1.0, 0.8)
+		for radius in range(4, 9):
+			_mana_gain_dot_textures.append(PlaceholderSprites.create_circle_texture(radius, color))
+	return _mana_gain_dot_textures
 
 static func _attach_transient_light(node: Node2D, color: Color, energy: float = 0.8, light_scale: float = 1.5, duration: float = 0.3) -> void:
 	## Add a brief PointLight2D that fades out and self-destructs.
@@ -183,10 +196,10 @@ static func spawn_mana_gain(parent: Node, pos: Vector2) -> void:
 	effect.z_index = 5
 
 	# More sparkles with varied sizes
+	var dot_textures := _get_mana_gain_dot_textures()
 	for i in range(6):
 		var dot := Sprite2D.new()
-		var r := randi_range(4, 8)
-		dot.texture = PlaceholderSprites.create_circle_texture(r, Color(0.3, 0.5, 1.0, 0.8))
+		dot.texture = dot_textures[randi_range(0, dot_textures.size() - 1)]
 		dot.position = Vector2(randf_range(-22, 22), randf_range(-8, 8))
 		effect.add_child(dot)
 

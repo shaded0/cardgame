@@ -115,37 +115,66 @@ func _build_map() -> void:
 func _create_room_node(room: RoomData, pos: Vector2) -> void:
 	var btn := Button.new()
 	btn.name = "Room_" + room.room_id
-	btn.custom_minimum_size = Vector2(160, 70)
-	btn.position = pos - Vector2(80, 35)
 
 	# Style based on room type
 	var type_icon: String = ""
 	var bg_color: Color
 	var border_color: Color
+	var btn_size: Vector2
+	var corner_radius: int
+	var border_width: int
 	match room.room_type:
 		RoomData.RoomType.COMBAT:
 			type_icon = "[Combat] "
 			bg_color = Color(0.12, 0.14, 0.22)
 			border_color = Color(0.3, 0.35, 0.50)
+			btn_size = Vector2(150, 60)
+			corner_radius = 4
+			border_width = 2
 		RoomData.RoomType.ELITE:
 			type_icon = "[Elite] "
 			bg_color = Color(0.22, 0.10, 0.15)
 			border_color = Color(0.55, 0.2, 0.35)
+			btn_size = Vector2(170, 75)
+			corner_radius = 6
+			border_width = 3
 		RoomData.RoomType.REST:
 			type_icon = "[Rest] "
 			bg_color = Color(0.08, 0.18, 0.12)
 			border_color = Color(0.2, 0.45, 0.3)
+			btn_size = Vector2(140, 65)
+			corner_radius = 20
+			border_width = 1
 		RoomData.RoomType.BOSS:
 			type_icon = "[Boss] "
 			bg_color = Color(0.28, 0.12, 0.04)
 			border_color = Color(0.65, 0.3, 0.1)
+			btn_size = Vector2(190, 85)
+			corner_radius = 0
+			border_width = 4
+		_:
+			type_icon = ""
+			bg_color = Color(0.12, 0.14, 0.22)
+			border_color = Color(0.3, 0.35, 0.50)
+			btn_size = Vector2(150, 60)
+			corner_radius = 4
+			border_width = 2
+
+	btn.custom_minimum_size = btn_size
+	btn.position = pos - btn_size * 0.5
 
 	var style := StyleBoxFlat.new()
 	style.bg_color = bg_color
 	style.border_color = border_color
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(8)
+	style.set_border_width_all(border_width)
 	style.set_content_margin_all(8)
+	if room.room_type == RoomData.RoomType.ELITE:
+		style.corner_radius_top_left = 16
+		style.corner_radius_top_right = 16
+		style.corner_radius_bottom_left = 4
+		style.corner_radius_bottom_right = 4
+	else:
+		style.set_corner_radius_all(corner_radius)
 	btn.add_theme_stylebox_override("normal", style)
 
 	var hover_style := style.duplicate() as StyleBoxFlat
@@ -166,9 +195,82 @@ func _create_room_node(room: RoomData, pos: Vector2) -> void:
 	btn.add_theme_color_override("font_color", Color(0.9, 0.85, 0.75))
 	btn.tooltip_text = room.description
 
+	# Add procedural icon
+	var icon_tex := _make_room_icon(room.room_type, border_color)
+	if icon_tex:
+		var icon_rect := TextureRect.new()
+		icon_rect.texture = icon_tex
+		icon_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+		icon_rect.position = Vector2(8, (btn_size.y - 14) * 0.5)
+		icon_rect.size = Vector2(14, 14)
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(icon_rect)
+		style.content_margin_left = 26
+
 	btn.pressed.connect(func() -> void: _on_room_clicked(room))
 	add_child(btn)
 	room_buttons[room.room_id] = btn
+
+func _make_room_icon(room_type: RoomData.RoomType, accent: Color) -> ImageTexture:
+	var size: int = 12
+	var img := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	match room_type:
+		RoomData.RoomType.COMBAT:
+			# Crossed swords
+			for i in range(size):
+				if i < size:
+					img.set_pixel(i, i, accent)
+					if i + 1 < size:
+						img.set_pixel(i + 1 if i + 1 < size else i, i, accent)
+				var mx: int = size - 1 - i
+				if mx >= 0 and mx < size:
+					img.set_pixel(mx, i, accent)
+					if mx - 1 >= 0:
+						img.set_pixel(mx - 1, i, accent)
+		RoomData.RoomType.ELITE:
+			# Six-pointed star
+			var cx: float = size / 2.0
+			var cy: float = size / 2.0
+			for x in range(size):
+				for y in range(size):
+					var dx: float = absf(float(x) - cx)
+					var dy: float = absf(float(y) - cy)
+					if dx + dy * 1.5 < 5.0 or dy + dx * 1.5 < 5.0:
+						img.set_pixel(x, y, accent)
+		RoomData.RoomType.REST:
+			# Campfire
+			var cx: int = size / 2
+			# Flame (top half)
+			for x in range(size):
+				for y in range(0, size / 2 + 2):
+					var dx: float = absf(float(x) - float(cx))
+					var flame_w: float = (1.0 - float(y) / float(size / 2 + 2)) * 3.5
+					if dx < flame_w:
+						var warm := accent.lightened(0.2)
+						img.set_pixel(x, y, warm)
+			# Logs (bottom)
+			for x in range(2, size - 2):
+				img.set_pixel(x, size - 3, accent.darkened(0.3))
+				img.set_pixel(x, size - 2, accent.darkened(0.4))
+		RoomData.RoomType.BOSS:
+			# Crown
+			var prong_xs := [2, 5, 8]
+			var prong_hs := [7, 9, 7]
+			for p_idx in range(3):
+				var px: int = prong_xs[p_idx]
+				var ph: int = prong_hs[p_idx]
+				for y in range(size - ph, size - 2):
+					img.set_pixel(px, y, accent)
+					if px + 1 < size:
+						img.set_pixel(px + 1, y, accent)
+			# Base bar
+			for x in range(1, size - 1):
+				img.set_pixel(x, size - 2, accent)
+				img.set_pixel(x, size - 1, accent.darkened(0.2))
+		_:
+			return null
+	return ImageTexture.create_from_image(img)
 
 func _draw_connections(container: Control, positions: Dictionary) -> void:
 	for room in GameManager.all_rooms:

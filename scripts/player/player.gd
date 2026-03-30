@@ -65,6 +65,7 @@ func _ready() -> void:
 	_refresh_combat_refs()
 	update_movement_input(0.0)
 	_last_motion_position = global_position
+	CombatFeedback.prewarm_common_assets()
 	# Start with disabled melee hitbox; each attack enables it on demand.
 	hitbox_shape.disabled = true
 
@@ -102,34 +103,18 @@ func _on_player_hit(hb: Hitbox) -> void:
 	health_component.take_damage(final_damage)
 	mana_component.on_damage_taken()
 
-	# Show damage number on player
-	DamageNumber.spawn(get_parent(), global_position, final_damage, Color(1.0, 0.3, 0.3))
-
 	# Knockback away from the hit source
 	if is_instance_valid(hb):
 		var kb_dir: Vector2 = (global_position - hb.global_position).normalized()
 		velocity = kb_dir * 300.0
 
-	# Screen shake, sparks, and flash on hit
-	ScreenFX.shake(self, 6.0, 0.12)
-	ScreenFX.spawn_hit_sparks(get_parent(), global_position, 5, Color(1.0, 0.4, 0.3))
-	ScreenFX.flash(self, Color(1.0, 0.2, 0.1, 0.15), 0.08)
-
-	# Scale punch on hit
-	var punch := create_tween()
-	punch.tween_property(anim_sprite, "scale", Vector2(1.12, 0.88), 0.04)
-	punch.tween_property(anim_sprite, "scale", Vector2(0.95, 1.05), 0.04)
-	punch.tween_property(anim_sprite, "scale", Vector2(1.0, 1.0), 0.04)
-
+	CombatFeedback.show_player_hit(self, get_parent(), anim_sprite, global_position, final_damage)
 	_flash_hurt()
 
 func _on_attack_hit(_hurtbox: Area2D) -> void:
 	## Feedback when the player's attack connects: hitstop, shake, mana.
 	mana_component.on_basic_attack_hit()
-	# Brief hitstop for impact weight
-	hitbox._do_hit_stop()
-	# Small shake so attacks feel punchy from the attacker side
-	ScreenFX.shake(self, 3.0, 0.06)
+	CombatFeedback.show_attack_connect(self, get_tree())
 
 func _setup_shadow() -> void:
 	var shadow := Sprite2D.new()

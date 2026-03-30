@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:Usersjwildgitreposworkspace -type f \\\\\\(-name *test*.gd -o -name test_*.gd \\\\\\))",
+      "Bash(find C:Usersjwildgitreposworkspace -type f -name *test*.gd)",
+      "Bash(where godot4:*)",
+      "Bash(where godot:*)"
+    ]
+  }
+}

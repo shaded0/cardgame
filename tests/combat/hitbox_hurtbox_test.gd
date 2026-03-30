@@ -2,9 +2,12 @@ extends "res://tests/support/test_case.gd"
 
 const HitboxScript = preload("res://scripts/combat/hitbox.gd")
 const HurtboxScript = preload("res://scripts/combat/hurtbox.gd")
+const ScreenFXScript = preload("res://scripts/combat/screen_fx.gd")
 
 func after_each() -> void:
 	Engine.time_scale = 1.0
+	ScreenFXScript._hit_freeze_depth = 0
+	ScreenFXScript._hit_freeze_restore_scale = 1.0
 
 func test_hitbox_notifies_hurtbox_when_overlap_occurs() -> void:
 	var hitbox = HitboxScript.new()
@@ -60,3 +63,16 @@ func test_overlapping_hit_stop_restores_original_time_scale() -> void:
 	await tree.create_timer(0.08, true, false, true).timeout
 
 	assert_near(Engine.time_scale, 0.45, 0.001, "Overlapping hitstops should unwind back to the original time scale instead of leaving the game stuck in slow motion.")
+
+func test_hit_stop_and_screenfx_freeze_share_the_same_restore_state() -> void:
+	var hitbox = HitboxScript.new()
+	root.add_child(hitbox)
+	await tree.process_frame
+
+	Engine.time_scale = 0.45
+	hitbox._do_hit_stop()
+	await tree.create_timer(0.01, true, false, true).timeout
+	ScreenFXScript.hit_freeze(tree, 0.03)
+	await tree.create_timer(0.08, true, false, true).timeout
+
+	assert_near(Engine.time_scale, 0.45, 0.001, "Hitbox hitstop and ScreenFX hit freeze should share one restore path so mixed combat effects cannot leave the game stuck in slowdown.")

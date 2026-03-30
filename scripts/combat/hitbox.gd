@@ -11,8 +11,6 @@ signal hit_landed(hurtbox: Area2D)
 @export var one_shot: bool = false
 ## Tracks which hurtboxes have been hit to prevent multi-hit in a single swing.
 var _hit_targets: Array[Area2D] = []
-static var _hit_stop_depth: int = 0
-static var _hit_stop_restore_scale: float = 1.0
 
 func _ready() -> void:
 	area_entered.connect(_on_area_entered)
@@ -43,20 +41,10 @@ func _disable() -> void:
 
 func _do_hit_stop() -> void:
 	## Brief engine freeze (hitstop) for weighty combat feel.
-	## Only applies when inside the scene tree.
+	## Delegate to ScreenFX so all temporary time-scale changes share one path.
 	if not is_inside_tree():
 		return
 	var tree: SceneTree = get_tree()
 	if tree == null:
 		return
-	# Keep nested hit-stops from restoring back to the slowed value.
-	if _hit_stop_depth == 0:
-		_hit_stop_restore_scale = Engine.time_scale
-		Engine.time_scale = minf(Engine.time_scale, 0.05)
-	_hit_stop_depth += 1
-
-	await tree.create_timer(0.04, true, false, true).timeout
-
-	_hit_stop_depth = maxi(_hit_stop_depth - 1, 0)
-	if _hit_stop_depth == 0:
-		Engine.time_scale = _hit_stop_restore_scale
+	await ScreenFX.hit_freeze(tree, 0.04)

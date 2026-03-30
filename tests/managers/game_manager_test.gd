@@ -84,3 +84,12 @@ func test_complete_room_emits_only_once_per_room() -> void:
 
 	assert_eq(manager.completed_rooms, ["boss"], "Completing the same room twice should still only record one completion.")
 	assert_eq(completed, ["boss"], "Room completion should only emit once per room so listeners do not repeat completion side effects.")
+
+func test_add_card_to_deck_ignores_null_cards() -> void:
+	var manager = Factory.make_game_manager(root)
+	manager.run_deck = [Factory.make_card("Strike")]
+
+	manager.add_card_to_deck(null)
+
+	assert_eq(manager.run_deck.size(), 1, "Run deck mutation should ignore null cards so broken reward payloads cannot corrupt deck state.")
+	assert_eq(manager.run_deck[0].card_name, "Strike", "Ignoring a null add should leave the existing run deck untouched.")
